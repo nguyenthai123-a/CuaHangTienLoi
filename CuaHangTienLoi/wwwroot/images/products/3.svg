@@ -1,0 +1,34 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 200" width="100%" height="100%">
+  <defs>
+    <linearGradient id="waterBg" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#e0f2fe"/>
+      <stop offset="100%" stop-color="#bae6fd"/>
+    </linearGradient>
+    <linearGradient id="waterBottle" x1="0%" y1="0%" x2="100%" y2="0%">
+      <stop offset="0%" stop-color="#0284c7"/>
+      <stop offset="30%" stop-color="#38bdf8"/>
+      <stop offset="70%" stop-color="#0ea5e9"/>
+      <stop offset="100%" stop-color="#0369a1"/>
+    </linearGradient>
+    <filter id="shadow3" x="-10%" y="-10%" width="120%" height="120%">
+      <feDropShadow dx="0" dy="5" stdDeviation="5" flood-opacity="0.2"/>
+    </filter>
+  </defs>
+  <rect width="200" height="200" rx="20" fill="url(#waterBg)"/>
+  <g filter="url(#shadow3)">
+    <!-- Blue Cap -->
+    <rect x="92" y="24" width="16" height="12" rx="2" fill="#0284c7"/>
+    <!-- Bottle Neck -->
+    <path d="M94,36 L106,36 L110,60 L90,60 Z" fill="#e0f2fe" opacity="0.9"/>
+    <!-- Bottle Ridges / Body -->
+    <path d="M90,60 Q72,70 74,105 L76,160 Q76,170 100,170 Q124,170 124,160 L126,105 Q128,70 110,60 Z" fill="url(#waterBottle)" opacity="0.85"/>
+    <!-- LaVie Label -->
+    <rect x="73" y="96" width="54" height="38" rx="3" fill="#ffffff"/>
+    <path d="M73,116 Q100,105 127,118 L127,134 L73,134 Z" fill="#0284c7"/>
+    <text x="100" y="112" text-anchor="middle" font-family="'Segoe UI', Roboto, sans-serif" font-size="11" font-weight="900" fill="#0284c7" letter-spacing="0.5">La Vie</text>
+    <text x="100" y="127" text-anchor="middle" font-family="sans-serif" font-size="6" font-weight="600" fill="#ffffff">KHOÁNG THIÊN NHIÊN</text>
+  </g>
+  <!-- Water Droplets -->
+  <circle cx="58" cy="85" r="4" fill="#38bdf8" opacity="0.6"/>
+  <circle cx="146" cy="115" r="3" fill="#38bdf8" opacity="0.5"/>
+</svg>

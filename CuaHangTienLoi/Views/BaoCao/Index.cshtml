@@ -1,0 +1,172 @@
+@model List<CuaHangTienLoi.Models.HoaDon>
+@{
+    ViewData["Title"] = "Báo cáo Doanh thu & Bán hàng";
+    ViewBag.ActiveMenu = "BaoCao";
+    var shifts = ViewBag.Shifts as List<CuaHangTienLoi.Models.Ca> ?? new();
+}
+
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <div>
+        <h4 class="fw-bold mb-1"><i class="fa-solid fa-file-invoice-dollar text-primary me-2"></i> Báo Cáo Doanh Thu Bán Hàng & Ca Làm Việc</h4>
+        <p class="text-muted small mb-0">Thống kê doanh số bán lẻ, chi tiết từng giao dịch và xuất báo cáo chuẩn Excel</p>
+    </div>
+    <div class="d-flex gap-2">
+        <a asp-action="XuatExcel" class="btn btn-success fw-semibold shadow-sm">
+            <i class="fa-solid fa-file-excel me-1"></i> Xuất Báo Cáo Doanh Thu (Excel)
+        </a>
+    </div>
+</div>
+
+<!-- Tabs: Báo cáo Hóa đơn / Báo cáo Ca -->
+<ul class="nav nav-pills mb-3" id="pills-tab" role="tablist">
+    <li class="nav-item" role="presentation">
+        <button class="nav-link active fw-bold" id="pills-hoadon-tab" data-bs-toggle="pill" data-bs-target="#pills-hoadon" type="button" role="tab">
+            <i class="fa-solid fa-receipt me-1"></i> Danh Sách Hóa Đơn Bán Hàng
+        </button>
+    </li>
+    <li class="nav-item" role="presentation">
+        <button class="nav-link fw-bold" id="pills-ca-tab" data-bs-toggle="pill" data-bs-target="#pills-ca" type="button" role="tab">
+            <i class="fa-solid fa-clock-rotate-left me-1"></i> Tổng Hợp Doanh Thu Theo Ca
+        </button>
+    </li>
+</ul>
+
+<div class="tab-content" id="pills-tabContent">
+    <!-- Tab 1: Hóa Đơn -->
+    <div class="tab-pane fade show active" id="pills-hoadon" role="tabpanel">
+        <div class="card shadow-sm border-0">
+            <div class="card-body p-0">
+                <div class="table-responsive">
+                    <table class="table table-hover align-middle mb-0">
+                        <thead class="table-light">
+                            <tr>
+                                <th class="ps-3">Số HĐ</th>
+                                <th>Thời Gian</th>
+                                <th>Quầy</th>
+                                <th>Thu Ngân</th>
+                                <th>Khách Hàng</th>
+                                <th class="text-end">Tiền Hàng</th>
+                                <th class="text-end">Giảm Giá</th>
+                                <th class="text-end">Thực Thu</th>
+                                <th class="text-center pe-3">In Hóa Đơn</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @if (Model == null || Model.Count == 0)
+                            {
+                                <tr>
+                                    <td colspan="9" class="text-center py-4 text-muted">Chưa có giao dịch hóa đơn nào</td>
+                                </tr>
+                            }
+                            else
+                            {
+                                foreach (var hd in Model)
+                                {
+                                    <tr>
+                                        <td class="ps-3 font-monospace fw-bold text-primary">@hd.SoHoaDon</td>
+                                        <td class="small font-monospace">@hd.NgayGio.ToString("dd/MM/yyyy HH:mm")</td>
+                                        <td><span class="badge bg-light text-dark border">@hd.TenQuay</span></td>
+                                        <td>@hd.TenThuNgan</td>
+                                        <td>@(string.IsNullOrEmpty(hd.TenKhachHang) ? "Khách vãng lai" : $"{hd.TenKhachHang} ({hd.SoDienThoaiKH})")</td>
+                                        <td class="text-end font-monospace">@hd.TongTien.ToString("N0")đ</td>
+                                        <td class="text-end font-monospace text-success">-@hd.GiamGia.ToString("N0")đ</td>
+                                        <td class="text-end font-monospace fw-bold text-dark fs-6">@hd.ThanhTien.ToString("N0")đ</td>
+                                        <td class="text-center pe-3">
+                                            <a asp-controller="Pos" asp-action="InHoaDon" asp-route-id="@hd.MaHoaDon" target="_blank" class="btn btn-outline-secondary btn-sm py-0 px-2" title="Xem & In">
+                                                <i class="fa-solid fa-print"></i>
+                                            </a>
+                                        </td>
+                                    </tr>
+                                }
+                            }
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Tab 2: Ca Làm Việc -->
+    <div class="tab-pane fade" id="pills-ca" role="tabpanel">
+        <div class="card shadow-sm border-0">
+            <div class="card-body p-0">
+                <div class="table-responsive">
+                    <table class="table table-hover align-middle mb-0">
+                        <thead class="table-light">
+                            <tr>
+                                <th class="ps-3">Mã Ca</th>
+                                <th>Quầy</th>
+                                <th>Thu Ngân</th>
+                                <th>Giờ Mở / Đóng</th>
+                                <th class="text-end">Tiền Đầu Ca</th>
+                                <th class="text-end">Tiền HT</th>
+                                <th class="text-end">Tiền Thực Tế</th>
+                                <th class="text-end">Chênh Lệch</th>
+                                <th class="text-center pe-3">Biên Bản Báo Cáo</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @if (shifts.Count == 0)
+                            {
+                                <tr>
+                                    <td colspan="9" class="text-center py-4 text-muted">Chưa có dữ liệu ca làm việc</td>
+                                </tr>
+                            }
+                            else
+                            {
+                                foreach (var ca in shifts)
+                                {
+                                    <tr>
+                                        <td class="ps-3 font-monospace fw-bold text-primary">#@ca.MaCa</td>
+                                        <td><span class="badge bg-light text-dark border">@ca.TenQuay</span></td>
+                                        <td>@ca.TenThuNgan</td>
+                                        <td class="small">
+                                            @ca.GioMo.ToString("dd/MM/yyyy HH:mm") &rarr;
+                                            @(ca.GioDong.HasValue ? ca.GioDong.Value.ToString("HH:mm") : "Đang mở")
+                                        </td>
+                                        <td class="text-end font-monospace">@ca.TienDauCa.ToString("N0")đ</td>
+                                        <td class="text-end font-monospace">@(ca.TienMatHeThong.HasValue ? ca.TienMatHeThong.Value.ToString("N0") + "đ" : "--")</td>
+                                        <td class="text-end font-monospace">@(ca.TienMatThucTe.HasValue ? ca.TienMatThucTe.Value.ToString("N0") + "đ" : "--")</td>
+                                        <td class="text-end font-monospace fw-bold">
+                                            @if (ca.ChenhLech.HasValue)
+                                            {
+                                                if (ca.ChenhLech.Value == 0)
+                                                {
+                                                    <span class="text-success">0đ</span>
+                                                }
+                                                else if (ca.ChenhLech.Value > 0)
+                                                {
+                                                    <span class="text-primary">+@ca.ChenhLech.Value.ToString("N0")đ</span>
+                                                }
+                                                else
+                                                {
+                                                    <span class="text-danger">@ca.ChenhLech.Value.ToString("N0")đ</span>
+                                                }
+                                            }
+                                            else
+                                            {
+                                                <span>--</span>
+                                            }
+                                        </td>
+                                        <td class="text-center pe-3">
+                                            @if (ca.TrangThai == "DONG")
+                                            {
+                                                <a asp-controller="Ca" asp-action="BaoCaoCa" asp-route-id="@ca.MaCa" class="btn btn-outline-primary btn-sm py-0 px-2">
+                                                    <i class="fa-solid fa-file-invoice"></i> Xem Báo Cáo
+                                                </a>
+                                            }
+                                            else
+                                            {
+                                                <span class="badge bg-success-subtle text-success">Đang hoạt động</span>
+                                            }
+                                        </td>
+                                    </tr>
+                                }
+                            }
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>

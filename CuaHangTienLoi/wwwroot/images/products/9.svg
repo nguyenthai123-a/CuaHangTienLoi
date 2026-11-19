@@ -1,0 +1,38 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 200" width="100%" height="100%">
+  <defs>
+    <linearGradient id="snackBg" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#ffedd5"/>
+      <stop offset="100%" stop-color="#fed7aa"/>
+    </linearGradient>
+    <linearGradient id="packBag" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#ea580c"/>
+      <stop offset="50%" stop-color="#f97316"/>
+      <stop offset="100%" stop-color="#c2410c"/>
+    </linearGradient>
+    <filter id="shadow9" x="-10%" y="-10%" width="120%" height="120%">
+      <feDropShadow dx="0" dy="5" stdDeviation="5" flood-opacity="0.25"/>
+    </filter>
+  </defs>
+  <rect width="200" height="200" rx="20" fill="url(#snackBg)"/>
+  <g filter="url(#shadow9)">
+    <!-- Snack Foil Pouch -->
+    <path d="M50,42 L150,42 L142,158 L58,158 Z" fill="url(#packBag)"/>
+    <line x1="50" y1="46" x2="150" y2="46" stroke="#fed7aa" stroke-width="2" stroke-dasharray="2,2"/>
+    <line x1="58" y1="154" x2="142" y2="154" stroke="#fed7aa" stroke-width="2" stroke-dasharray="2,2"/>
+    
+    <!-- O'Star Star & Logo -->
+    <circle cx="100" cy="72" rx="22" ry="22" fill="#fbbf24"/>
+    <text x="100" y="78" text-anchor="middle" font-family="'Arial Black', sans-serif" font-size="12" font-weight="900" fill="#dc2626">O'Star</text>
+
+    <!-- Potato Chips Graphics -->
+    <ellipse cx="85" cy="115" rx="18" ry="10" fill="#fde047" stroke="#eab308" stroke-width="1.5" transform="rotate(-20 85 115)"/>
+    <ellipse cx="112" cy="118" rx="20" ry="11" fill="#facc15" stroke="#ca8a04" stroke-width="1.5" transform="rotate(25 112 118)"/>
+    <!-- Kimchi chili flakes -->
+    <circle cx="82" cy="113" r="1.5" fill="#dc2626"/>
+    <circle cx="89" cy="116" r="1.5" fill="#dc2626"/>
+    <circle cx="110" cy="115" r="1.5" fill="#dc2626"/>
+    <circle cx="116" cy="120" r="1.5" fill="#dc2626"/>
+
+    <text x="100" y="142" text-anchor="middle" font-family="sans-serif" font-size="8" font-weight="900" fill="#ffffff" letter-spacing="0.5">VỊ KIM CHI</text>
+  </g>
+</svg>

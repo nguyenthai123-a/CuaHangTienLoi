@@ -1,0 +1,12 @@
+{
+  "name": "cuahangtienloi-root",
+  "version": "1.0.0",
+  "description": "He thong Quan ly Kho va Cua hang Tien loi",
+  "scripts": {
+    "dev": "dotnet watch --project CuaHangTienLoi/CuaHangTienLoi.csproj",
+    "start": "dotnet run --project CuaHangTienLoi/CuaHangTienLoi.csproj",
+    "build": "dotnet build CuaHangTienLoi.sln"
+  },
+  "author": "Antigravity",
+  "license": "ISC"
+}

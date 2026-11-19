@@ -1,0 +1,198 @@
+@model CuaHangTienLoi.Models.NhapKhoViewModel
+@{
+    ViewData["Title"] = "Lập Phiếu Nhập Kho";
+    ViewBag.ActiveMenu = "NhapKho";
+    var suppliers = ViewBag.Suppliers as List<CuaHangTienLoi.Models.NhaCungCap> ?? new();
+    var products = ViewBag.Products as List<CuaHangTienLoi.Models.HangHoa> ?? new();
+}
+
+<div class="row justify-content-center">
+    <div class="col-lg-10">
+        <div class="card shadow-sm border-0">
+            <div class="card-header bg-white py-3 border-bottom d-flex justify-content-between align-items-center">
+                <div class="d-flex align-items-center">
+                    <div class="bg-primary text-white rounded p-2 me-3">
+                        <i class="fa-solid fa-cart-flatbed fa-lg"></i>
+                    </div>
+                    <div>
+                        <h5 class="fw-bold mb-0 text-primary">Lập Phiếu Nhập Hàng Mới</h5>
+                        <small class="text-muted">Mỗi dòng sản phẩm nhập vào sẽ tự động khởi tạo 1 Lô hàng mới (Quản lý HSD theo FEFO)</small>
+                    </div>
+                </div>
+                <a asp-action="Index" class="btn btn-outline-secondary btn-sm">
+                    <i class="fa-solid fa-arrow-left me-1"></i> Quay lại
+                </a>
+            </div>
+
+            <div class="card-body p-4">
+                <form asp-action="NhapKho" method="post" id="formNhapKho">
+                    @Html.AntiForgeryToken()
+
+                    @if (!ViewData.ModelState.IsValid)
+                    {
+                        <div class="alert alert-danger py-2 small mb-3">
+                            @Html.ValidationSummary(false, "", new { @class = "mb-0 list-unstyled" })
+                        </div>
+                    }
+
+                    <div class="row g-3 mb-4 p-3 bg-light rounded border">
+                        <div class="col-md-6">
+                            <label asp-for="MaNCC" class="form-label fw-bold">Nhà Cung Cấp <span class="text-danger">*</span></label>
+                            <select asp-for="MaNCC" class="form-select" required>
+                                <option value="">-- Chọn Nhà cung cấp --</option>
+                                @foreach (var ncc in suppliers)
+                                {
+                                    <option value="@ncc.MaNCC">@ncc.TenNCC (@ncc.SoDienThoai)</option>
+                                }
+                            </select>
+                        </div>
+                        <div class="col-md-6">
+                            <label asp-for="SoPhieuGiao" class="form-label fw-bold">Số Phiếu Giao Hàng / Hóa Đơn NCC <span class="text-danger">*</span></label>
+                            <input asp-for="SoPhieuGiao" class="form-control" placeholder="VD: HĐ-VNM-2026/01" required />
+                        </div>
+                    </div>
+
+                    <!-- Danh sách hàng nhập -->
+                    <div class="d-flex justify-content-between align-items-center mb-3">
+                        <h6 class="fw-bold mb-0 text-dark"><i class="fa-solid fa-list-check me-2 text-primary"></i> DANH SÁCH CHI TIẾT LÔ HÀNG NHẬP</h6>
+                        <button type="button" class="btn btn-outline-primary btn-sm fw-semibold" id="btnAddRow">
+                            <i class="fa-solid fa-plus me-1"></i> Thêm Dòng Sản Phẩm
+                        </button>
+                    </div>
+
+                    <div class="table-responsive mb-4">
+                        <table class="table table-bordered align-middle" id="tblItems">
+                            <thead class="table-light">
+                                <tr>
+                                    <th style="width: 35%;">Sản phẩm</th>
+                                    <th style="width: 15%;">Số Lô</th>
+                                    <th style="width: 15%;">Hạn Sử Dụng</th>
+                                    <th style="width: 12%;">Số Lượng</th>
+                                    <th style="width: 15%;">Giá Nhập (đ)</th>
+                                    <th style="width: 8%;" class="text-center">Xóa</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <!-- Dòng 1 mặc định -->
+                                <tr>
+                                    <td>
+                                        <select name="ChiTiet[0].MaHang" class="form-select form-select-sm product-select" required>
+                                            <option value="">-- Chọn sản phẩm --</option>
+                                            @foreach (var p in products)
+                                            {
+                                                <option value="@p.MaHang" data-price="@(p.GiaNhap ?? 0)">@p.TenHang (@p.DonViTinh)</option>
+                                            }
+                                        </select>
+                                    </td>
+                                    <td>
+                                        <input type="text" name="ChiTiet[0].SoLo" class="form-control form-control-sm font-monospace" placeholder="VD: L01-2026" required />
+                                    </td>
+                                    <td>
+                                        <input type="date" name="ChiTiet[0].HanSuDung" class="form-control form-control-sm" required />
+                                    </td>
+                                    <td>
+                                        <input type="number" name="ChiTiet[0].SoLuong" class="form-control form-control-sm text-end qty-input" min="1" value="20" required />
+                                    </td>
+                                    <td>
+                                        <input type="number" name="ChiTiet[0].GiaNhap" class="form-control form-control-sm text-end price-input" min="0" value="10000" required />
+                                    </td>
+                                    <td class="text-center">
+                                        <button type="button" class="btn btn-outline-danger btn-sm py-0 px-2 btn-remove-row"><i class="fa-solid fa-xmark"></i></button>
+                                    </td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+
+                    <div class="d-flex justify-content-between align-items-center p-3 bg-light rounded border mb-4">
+                        <span class="fw-bold">TỔNG TIỀN PHIẾU NHẬP DỰ KIẾN:</span>
+                        <span id="lblTotalAmount" class="fs-4 fw-bold text-primary font-monospace">0đ</span>
+                    </div>
+
+                    <div class="d-flex justify-content-end gap-2">
+                        <a asp-action="Index" class="btn btn-secondary px-4">Hủy bỏ</a>
+                        <button type="submit" class="btn btn-primary px-5 fw-bold shadow-sm">
+                            <i class="fa-solid fa-check me-2"></i> HOÀN TẤT NHẬP KHO & TẠO LÔ
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script>
+        let rowIndex = 1;
+        const productsOptions = `@foreach (var p in products) { <option value="@p.MaHang" data-price="@(p.GiaNhap ?? 0)">@p.TenHang (@p.DonViTinh)</option> }`;
+
+        document.getElementById('btnAddRow').addEventListener('click', function () {
+            const tbody = document.querySelector('#tblItems tbody');
+            const tr = document.createElement('tr');
+            tr.innerHTML = `
+                <td>
+                    <select name="ChiTiet[${rowIndex}].MaHang" class="form-select form-select-sm product-select" required>
+                        <option value="">-- Chọn sản phẩm --</option>
+                        ${productsOptions}
+                    </select>
+                </td>
+                <td>
+                    <input type="text" name="ChiTiet[${rowIndex}].SoLo" class="form-control form-control-sm font-monospace" placeholder="VD: L0${rowIndex + 1}-2026" required />
+                </td>
+                <td>
+                    <input type="date" name="ChiTiet[${rowIndex}].HanSuDung" class="form-control form-control-sm" required />
+                </td>
+                <td>
+                    <input type="number" name="ChiTiet[${rowIndex}].SoLuong" class="form-control form-control-sm text-end qty-input" min="1" value="10" required />
+                </td>
+                <td>
+                    <input type="number" name="ChiTiet[${rowIndex}].GiaNhap" class="form-control form-control-sm text-end price-input" min="0" value="10000" required />
+                </td>
+                <td class="text-center">
+                    <button type="button" class="btn btn-outline-danger btn-sm py-0 px-2 btn-remove-row"><i class="fa-solid fa-xmark"></i></button>
+                </td>
+            `;
+            tbody.appendChild(tr);
+            rowIndex++;
+            bindRowEvents(tr);
+            calcTotal();
+        });
+
+        function bindRowEvents(row) {
+            row.querySelector('.btn-remove-row')?.addEventListener('click', function () {
+                const tbody = document.querySelector('#tblItems tbody');
+                if (tbody.children.length > 1) {
+                    row.remove();
+                    calcTotal();
+                } else {
+                    alert('Phiếu nhập phải có ít nhất 1 dòng sản phẩm!');
+                }
+            });
+
+            row.querySelector('.qty-input')?.addEventListener('input', calcTotal);
+            row.querySelector('.price-input')?.addEventListener('input', calcTotal);
+            row.querySelector('.product-select')?.addEventListener('change', function () {
+                const opt = this.options[this.selectedIndex];
+                const price = opt.dataset.price || '0';
+                const priceInput = row.querySelector('.price-input');
+                if (priceInput && parseFloat(price) > 0) {
+                    priceInput.value = price;
+                }
+                calcTotal();
+            });
+        }
+
+        function calcTotal() {
+            let total = 0;
+            document.querySelectorAll('#tblItems tbody tr').forEach(tr => {
+                const qty = parseFloat(tr.querySelector('.qty-input')?.value || '0');
+                const price = parseFloat(tr.querySelector('.price-input')?.value || '0');
+                total += (qty * price);
+            });
+            document.getElementById('lblTotalAmount').innerText = total.toLocaleString('vi-VN') + 'đ';
+        }
+
+        document.querySelectorAll('#tblItems tbody tr').forEach(bindRowEvents);
+        calcTotal();
+    </script>
+}

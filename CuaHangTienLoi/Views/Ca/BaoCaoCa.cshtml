@@ -1,0 +1,149 @@
+@model CuaHangTienLoi.Models.BaoCaoCa
+@{
+    ViewData["Title"] = $"Báo cáo tổng kết Ca #{Model.MaCa}";
+}
+
+<div class="d-flex justify-content-between align-items-center mb-4 no-print">
+    <div>
+        <h4 class="fw-bold mb-1"><i class="fa-solid fa-file-invoice text-primary me-2"></i> Báo Cáo Tổng Kết Ca Làm Việc</h4>
+        <p class="text-muted small mb-0">Biên bản kết toán doanh thu và đối chiếu tiền mặt ca #@Model.MaCa</p>
+    </div>
+    <div class="d-flex gap-2">
+        <button type="button" class="btn btn-outline-primary" onclick="window.print()">
+            <i class="fa-solid fa-print me-1"></i> In Báo Cáo Ca
+        </button>
+        <a asp-action="Index" class="btn btn-secondary">
+            <i class="fa-solid fa-arrow-left me-1"></i> Về danh sách ca
+        </a>
+    </div>
+</div>
+
+<div class="row justify-content-center print-area">
+    <div class="col-md-9 col-lg-8">
+        <div class="card shadow-sm border p-4 bg-white">
+            <!-- Header Report -->
+            <div class="text-center border-bottom pb-3 mb-4">
+                <h4 class="fw-bold text-dark mb-1">CỬA HÀNG TIỆN LỢI 24/7</h4>
+                <div class="text-muted small">227 Nguyễn Văn Cừ, Phường 4, Quận 5, TP.HCM</div>
+                <h5 class="fw-bold text-primary mt-3 mb-1">BIÊN BẢN BÁO CÁO TỔNG KẾT CA</h5>
+                <div class="font-monospace text-secondary">Mã Ca: #@Model.MaCa • Lập lúc: @Model.NgayLap.ToString("dd/MM/yyyy HH:mm:ss")</div>
+            </div>
+
+            <!-- Ca Info -->
+            <div class="row g-3 mb-4 pb-3 border-bottom small">
+                <div class="col-6">
+                    <div>Quầy thu ngân: <strong>@Model.Ca?.TenQuay</strong></div>
+                    <div>Thu ngân phụ trách: <strong>@Model.Ca?.TenThuNgan</strong></div>
+                    @if (!string.IsNullOrEmpty(Model.Ca?.TenNguoiChot) && Model.Ca?.TenNguoiChot != Model.Ca?.TenThuNgan)
+                    {
+                        <div class="text-danger">Người chốt thay: <strong>@Model.Ca?.TenNguoiChot</strong></div>
+                    }
+                </div>
+                <div class="col-6 text-end">
+                    <div>Giờ mở ca: <span class="font-monospace">@Model.Ca?.GioMo.ToString("dd/MM/yyyy HH:mm")</span></div>
+                    <div>Giờ đóng ca: <span class="font-monospace">@(Model.Ca?.GioDong.HasValue == true ? Model.Ca.GioDong.Value.ToString("dd/MM/yyyy HH:mm") : "--")</span></div>
+                </div>
+            </div>
+
+            <!-- Doanh thu chi tiết -->
+            <h6 class="fw-bold text-dark mb-3">1. CƠ CẤU DOANH THU THEO PHƯƠNG THỨC THANH TOÁN</h6>
+            <table class="table table-bordered mb-4">
+                <thead class="table-light">
+                    <tr>
+                        <th>Phương thức</th>
+                        <th class="text-end">Doanh thu phát sinh</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td><i class="fa-solid fa-money-bill-wave text-success me-2"></i> Tiền mặt</td>
+                        <td class="text-end font-monospace fw-bold">@Model.DoanhThuTienMat.ToString("N0")đ</td>
+                    </tr>
+                    <tr>
+                        <td><i class="fa-solid fa-qrcode text-primary me-2"></i> Chuyển khoản QR (VietQR)</td>
+                        <td class="text-end font-monospace fw-bold">@Model.DoanhThuQR.ToString("N0")đ</td>
+                    </tr>
+                    <tr>
+                        <td><i class="fa-solid fa-credit-card text-info me-2"></i> Thẻ ngân hàng (POS)</td>
+                        <td class="text-end font-monospace fw-bold">@Model.DoanhThuThe.ToString("N0")đ</td>
+                    </tr>
+                    <tr class="table-primary fw-bold">
+                        <td>TỔNG DOANH THU TRONG CA:</td>
+                        <td class="text-end font-monospace fs-5">@Model.TongDoanhThu.ToString("N0")đ</td>
+                    </tr>
+                </tbody>
+            </table>
+
+            <!-- Bàn giao tiền mặt -->
+            <h6 class="fw-bold text-dark mb-3">2. ĐỐI CHIẾU TIỀN MẶT BÀN GIAO</h6>
+            <table class="table table-bordered mb-4">
+                <tbody>
+                    <tr>
+                        <td style="width: 60%;">Tiền mặt đầu ca (Bàn giao ban đầu):</td>
+                        <td class="text-end font-monospace">@Model.Ca?.TienDauCa.ToString("N0")đ</td>
+                    </tr>
+                    <tr>
+                        <td>Doanh thu tiền mặt phát sinh trong ca:</td>
+                        <td class="text-end font-monospace text-success">+@Model.DoanhThuTienMat.ToString("N0")đ</td>
+                    </tr>
+                    <tr class="table-light fw-bold">
+                        <td>TỔNG TIỀN MẶT HỆ THỐNG DỰ KIẾN:</td>
+                        <td class="text-end font-monospace">@(Model.Ca?.TienMatHeThong.HasValue == true ? Model.Ca.TienMatHeThong.Value.ToString("N0") + "đ" : "--")</td>
+                    </tr>
+                    <tr class="fw-bold">
+                        <td>TIỀN MẶT THỰC TẾ ĐẾM BÀN GIAO:</td>
+                        <td class="text-end font-monospace text-primary fs-5">@(Model.Ca?.TienMatThucTe.HasValue == true ? Model.Ca.TienMatThucTe.Value.ToString("N0") + "đ" : "--")</td>
+                    </tr>
+                    <tr class="fw-bold">
+                        <td>CHÊNH LỆCH TIỀN MẶT:</td>
+                        <td class="text-end font-monospace">
+                            @if (Model.Ca?.ChenhLech.HasValue == true)
+                            {
+                                if (Model.Ca.ChenhLech.Value == 0)
+                                {
+                                    <span class="text-success">0đ (Khớp 100%)</span>
+                                }
+                                else if (Model.Ca.ChenhLech.Value > 0)
+                                {
+                                    <span class="text-primary">+@Model.Ca.ChenhLech.Value.ToString("N0")đ (Thừa)</span>
+                                }
+                                else
+                                {
+                                    <span class="text-danger">@Model.Ca.ChenhLech.Value.ToString("N0")đ (Thiếu)</span>
+                                }
+                            }
+                            else
+                            {
+                                <span>--</span>
+                            }
+                        </td>
+                    </tr>
+                </tbody>
+            </table>
+
+            @if (!string.IsNullOrEmpty(Model.Ca?.LyDoChenhLech))
+            {
+                <div class="p-3 bg-light rounded border mb-4">
+                    <strong>Giải trình chênh lệch:</strong>
+                    <div class="text-muted small mt-1">@Model.Ca?.LyDoChenhLech</div>
+                </div>
+            }
+
+            <!-- Ký nhận -->
+            <div class="row text-center mt-5 pt-3">
+                <div class="col-6">
+                    <div class="fw-bold">THU NGÂN BÀN GIAO</div>
+                    <small class="text-muted">(Ký và ghi rõ họ tên)</small>
+                    <div style="height: 60px;"></div>
+                    <div class="fw-bold">@Model.Ca?.TenThuNgan</div>
+                </div>
+                <div class="col-6">
+                    <div class="fw-bold">QUẢN LÝ XÁC NHẬN</div>
+                    <small class="text-muted">(Ký và ghi rõ họ tên)</small>
+                    <div style="height: 60px;"></div>
+                    <div class="fw-bold">@(Model.Ca?.TenNguoiChot ?? "Quản lý ca")</div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>

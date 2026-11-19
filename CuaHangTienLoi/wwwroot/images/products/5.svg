@@ -1,0 +1,45 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 200" width="100%" height="100%">
+  <defs>
+    <linearGradient id="sausBg" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#fff1f2"/>
+      <stop offset="100%" stop-color="#ffe4e6"/>
+    </linearGradient>
+    <linearGradient id="sausBody" x1="0%" y1="0%" x2="100%" y2="0%">
+      <stop offset="0%" stop-color="#dc2626"/>
+      <stop offset="35%" stop-color="#ef4444"/>
+      <stop offset="70%" stop-color="#b91c1c"/>
+      <stop offset="100%" stop-color="#991b1b"/>
+    </linearGradient>
+    <filter id="shadow5" x="-10%" y="-10%" width="120%" height="120%">
+      <feDropShadow dx="0" dy="5" stdDeviation="5" flood-opacity="0.25"/>
+    </filter>
+  </defs>
+  <rect width="200" height="200" rx="20" fill="url(#sausBg)"/>
+  <g filter="url(#shadow5)">
+    <!-- 4 Sausages in a row -->
+    <!-- Sausage 1 -->
+    <rect x="58" y="45" width="18" height="110" rx="9" fill="url(#sausBody)"/>
+    <ellipse cx="67" cy="48" rx="4" ry="2" fill="#fca5a5"/>
+    <ellipse cx="67" cy="152" rx="4" ry="2" fill="#7f1d1d"/>
+
+    <!-- Sausage 2 -->
+    <rect x="80" y="40" width="18" height="118" rx="9" fill="url(#sausBody)"/>
+    <ellipse cx="89" cy="43" rx="4" ry="2" fill="#fca5a5"/>
+    <ellipse cx="89" cy="155" rx="4" ry="2" fill="#7f1d1d"/>
+
+    <!-- Sausage 3 -->
+    <rect x="102" y="40" width="18" height="118" rx="9" fill="url(#sausBody)"/>
+    <ellipse cx="111" cy="43" rx="4" ry="2" fill="#fca5a5"/>
+    <ellipse cx="111" cy="155" rx="4" ry="2" fill="#7f1d1d"/>
+
+    <!-- Sausage 4 -->
+    <rect x="124" y="45" width="18" height="110" rx="9" fill="url(#sausBody)"/>
+    <ellipse cx="133" cy="48" rx="4" ry="2" fill="#fca5a5"/>
+    <ellipse cx="133" cy="152" rx="4" ry="2" fill="#7f1d1d"/>
+
+    <!-- Yellow Ribbon band around all 4 -->
+    <rect x="52" y="88" width="96" height="34" rx="4" fill="#fbbf24"/>
+    <text x="100" y="103" text-anchor="middle" font-family="'Arial Black', sans-serif" font-size="11" font-weight="900" fill="#dc2626">VISSAN</text>
+    <text x="100" y="115" text-anchor="middle" font-family="sans-serif" font-size="7" font-weight="700" fill="#1e293b">XÚC XÍCH HEO 4 CÂY</text>
+  </g>
+</svg>

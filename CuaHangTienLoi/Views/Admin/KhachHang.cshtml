@@ -1,0 +1,71 @@
+@model List<CuaHangTienLoi.Models.KhachHang>
+@{
+    ViewData["Title"] = "Khách hàng thân thiết";
+    ViewBag.ActiveMenu = "KhachHang";
+}
+
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <div>
+        <h4 class="fw-bold mb-1"><i class="fa-solid fa-id-card text-primary me-2"></i> Khách Hàng Thân Thiết & Tích Lũy Điểm</h4>
+        <p class="text-muted small mb-0">Chương trình thành viên: Tích lũy 1 điểm cho mỗi 10.000đ chi tiêu, quy đổi 1 điểm = 1.000đ trừ trực tiếp vào hóa đơn</p>
+    </div>
+</div>
+
+<div class="card shadow-sm border-0">
+    <div class="card-body p-0">
+        <div class="table-responsive">
+            <table class="table table-hover align-middle mb-0">
+                <thead class="table-light">
+                    <tr>
+                        <th class="ps-3">Mã KH</th>
+                        <th>Họ Và Tên</th>
+                        <th>Số Điện Thoại</th>
+                        <th class="text-end">Điểm Tích Lũy</th>
+                        <th class="text-end">Giá Trị Quy Đổi (VNĐ)</th>
+                        <th class="text-center pe-3">Hạng Thành Viên</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @if (Model.Count == 0)
+                    {
+                        <tr>
+                            <td colspan="6" class="text-center py-4 text-muted">Chưa có khách hàng thành viên nào</td>
+                        </tr>
+                    }
+                    else
+                    {
+                        foreach (var kh in Model)
+                        {
+                            decimal giaTriDoi = kh.DiemTichLuy * 1000m;
+                            <tr>
+                                <td class="ps-3 fw-bold text-secondary">#@kh.MaKH</td>
+                                <td class="fw-bold text-dark">@kh.HoTen</td>
+                                <td class="font-monospace text-primary">@kh.SoDienThoai</td>
+                                <td class="text-end font-monospace fw-bold text-success fs-6">
+                                    @kh.DiemTichLuy.ToString("N0") điểm
+                                </td>
+                                <td class="text-end font-monospace text-muted">
+                                    ~ @giaTriDoi.ToString("N0")đ
+                                </td>
+                                <td class="text-center pe-3">
+                                    @if (kh.DiemTichLuy >= 100)
+                                    {
+                                        <span class="badge bg-warning text-dark"><i class="fa-solid fa-crown me-1"></i> VIP Vàng</span>
+                                    }
+                                    else if (kh.DiemTichLuy >= 50)
+                                    {
+                                        <span class="badge bg-secondary"><i class="fa-solid fa-medal me-1"></i> Bạc</span>
+                                    }
+                                    else
+                                    {
+                                        <span class="badge bg-light text-dark border">Đồng</span>
+                                    }
+                                </td>
+                            </tr>
+                        }
+                    }
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>

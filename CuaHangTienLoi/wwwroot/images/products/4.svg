@@ -1,0 +1,38 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 200" width="100%" height="100%">
+  <defs>
+    <linearGradient id="noodleBg" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#fce7f3"/>
+      <stop offset="100%" stop-color="#fbcfe8"/>
+    </linearGradient>
+    <linearGradient id="packGradient" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#ec4899"/>
+      <stop offset="50%" stop-color="#f43f5e"/>
+      <stop offset="100%" stop-color="#be123c"/>
+    </linearGradient>
+    <filter id="shadow4" x="-10%" y="-10%" width="120%" height="120%">
+      <feDropShadow dx="0" dy="6" stdDeviation="5" flood-opacity="0.25"/>
+    </filter>
+  </defs>
+  <rect width="200" height="200" rx="20" fill="url(#noodleBg)"/>
+  <g filter="url(#shadow4)">
+    <!-- Pillow pack outline -->
+    <rect x="45" y="45" width="110" height="110" rx="14" fill="url(#packGradient)"/>
+    <!-- Top & bottom seal crimps -->
+    <line x1="45" y1="52" x2="155" y2="52" stroke="#fda4af" stroke-width="2" stroke-dasharray="3,2"/>
+    <line x1="45" y1="148" x2="155" y2="148" stroke="#fda4af" stroke-width="2" stroke-dasharray="3,2"/>
+    <!-- Yellow Banner for Hao Hao -->
+    <ellipse cx="100" cy="80" rx="42" ry="18" fill="#fbbf24"/>
+    <text x="100" y="85" text-anchor="middle" font-family="'Arial Black', sans-serif" font-size="16" font-weight="900" fill="#dc2626">Hảo Hảo</text>
+    <!-- Subtitle -->
+    <text x="100" y="103" text-anchor="middle" font-family="sans-serif" font-size="8" font-weight="700" fill="#ffffff">TÔM CHUA CAY</text>
+    <!-- Noodle Bowl Illustration -->
+    <path d="M72,118 Q100,140 128,118 Z" fill="#e2e8f0"/>
+    <ellipse cx="100" cy="118" rx="28" ry="7" fill="#f59e0b"/>
+    <!-- Shrimp / Chili icon -->
+    <path d="M92,114 Q98,107 108,112 Q105,117 96,118 Z" fill="#ef4444"/>
+    <!-- Steam waves -->
+    <path d="M85,110 Q83,104 87,100" stroke="#ffffff" stroke-width="1.5" fill="none" opacity="0.8"/>
+    <path d="M100,108 Q98,102 102,98" stroke="#ffffff" stroke-width="1.5" fill="none" opacity="0.8"/>
+    <path d="M115,110 Q113,104 117,100" stroke="#ffffff" stroke-width="1.5" fill="none" opacity="0.8"/>
+  </g>
+</svg>

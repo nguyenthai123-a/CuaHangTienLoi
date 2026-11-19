@@ -1,0 +1,20 @@
+@{
+    ViewData["Title"] = "Trang Chủ";
+}
+<div class="container py-5 text-center">
+    <div class="display-4 text-primary fw-bold mb-3">
+        <i class="fa-solid fa-store text-warning me-2"></i> CỬA HÀNG TIỆN LỢI 24/7
+    </div>
+    <p class="lead text-muted mb-4">Hệ Thống Quản Lý Kho (FEFO) & Bán Hàng Tại Quầy (POS) Hiện Đại</p>
+    <div class="d-flex justify-content-center gap-3">
+        <a asp-controller="Pos" asp-action="Index" class="btn btn-warning btn-lg fw-bold px-4 shadow-sm">
+            <i class="fa-solid fa-cash-register me-2"></i> Màn hình Bán hàng POS
+        </a>
+        <a asp-controller="Admin" asp-action="Dashboard" class="btn btn-primary btn-lg fw-bold px-4 shadow-sm">
+            <i class="fa-solid fa-chart-line me-2"></i> Bảng Quản trị
+        </a>
+        <a asp-controller="Kho" asp-action="Index" class="btn btn-info text-white btn-lg fw-bold px-4 shadow-sm">
+            <i class="fa-solid fa-warehouse me-2"></i> Quản lý Kho & FEFO
+        </a>
+    </div>
+</div>

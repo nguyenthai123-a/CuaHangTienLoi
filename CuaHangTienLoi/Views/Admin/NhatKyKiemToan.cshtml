@@ -1,0 +1,130 @@
+@model List<CuaHangTienLoi.Models.NhatKyKiemToan>
+@{
+    ViewData["Title"] = "Nhật ký kiểm toán";
+    ViewBag.ActiveMenu = "NhatKy";
+    string? search = ViewBag.Search as string;
+}
+
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <div>
+        <h4 class="fw-bold mb-1"><i class="fa-solid fa-shield-halved text-primary me-2"></i> Nhật Ký Kiểm Toán Hệ Thống (Audit Trail)</h4>
+        <p class="text-muted small mb-0">
+            <span class="badge bg-success-subtle text-success border border-success me-1">Bất biến (Immutable)</span>
+            Bảo vệ bằng Trigger CSDL (TR_NhatKy_ChiThem): Dữ liệu nhật ký chỉ được thêm, tuyệt đối không được sửa hoặc xóa.
+        </p>
+    </div>
+</div>
+
+<!-- Search Bar -->
+<div class="card shadow-sm border-0 mb-4">
+    <div class="card-body p-3">
+        <form method="get" class="row g-2 align-items-center">
+            <div class="col-md-8">
+                <div class="input-group">
+                    <span class="input-group-text bg-white"><i class="fa-solid fa-magnifying-glass text-muted"></i></span>
+                    <input type="text" name="search" value="@search" class="form-control" 
+                           placeholder="Tìm kiếm theo hành động, tài khoản, đối tượng tác động (VD: DANG_NHAP, BAN_HANG, HD-0001)..." />
+                </div>
+            </div>
+            <div class="col-md-2">
+                <button type="submit" class="btn btn-primary w-100"><i class="fa-solid fa-filter me-1"></i> Tìm kiếm</button>
+            </div>
+            <div class="col-md-2">
+                <a asp-action="NhatKyKiemToan" class="btn btn-outline-secondary w-100"><i class="fa-solid fa-rotate me-1"></i> Làm mới</a>
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- Bảng Nhật Ký -->
+<div class="card shadow-sm border-0">
+    <div class="card-body p-0">
+        <div class="table-responsive">
+            <table class="table table-hover align-middle mb-0" style="font-size: 0.84rem;">
+                <thead class="table-light">
+                    <tr>
+                        <th class="ps-3">Mã NK</th>
+                        <th>Thời Gian</th>
+                        <th>Tài Khoản / Người Thực Hiện</th>
+                        <th>Hành Động</th>
+                        <th>Đối Tượng</th>
+                        <th>IP / Thiết Bị</th>
+                        <th>Chi Tiết Thay Đổi (Giá trị cũ / mới)</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @if (Model.Count == 0)
+                    {
+                        <tr>
+                            <td colspan="7" class="text-center py-4 text-muted">Không có nhật ký nào phù hợp</td>
+                        </tr>
+                    }
+                    else
+                    {
+                        foreach (var log in Model)
+                        {
+                            <tr>
+                                <td class="ps-3 font-monospace fw-bold text-secondary">#@log.MaNK</td>
+                                <td class="font-monospace text-muted small">@log.ThoiGian.ToString("dd/MM/yyyy HH:mm:ss")</td>
+                                <td>
+                                    <div class="fw-bold text-dark">@log.TenDangNhap</div>
+                                    <small class="text-muted">@log.HoTenNhanVien</small>
+                                </td>
+                                <td>
+                                    @switch (log.HanhDong)
+                                    {
+                                        case "BAN_HANG_POS":
+                                            <span class="badge bg-success-subtle text-success border border-success"><i class="fa-solid fa-cart-shopping me-1"></i> Bán hàng POS</span>
+                                            break;
+                                        case "MO_CA":
+                                            <span class="badge bg-info-subtle text-info border border-info"><i class="fa-solid fa-door-open me-1"></i> Mở ca</span>
+                                            break;
+                                        case "DONG_CA":
+                                            <span class="badge bg-warning-subtle text-warning border border-warning"><i class="fa-solid fa-door-closed me-1"></i> Đóng ca</span>
+                                            break;
+                                        case "DANG_NHAP_THANH_CONG":
+                                            <span class="badge bg-primary-subtle text-primary border border-primary"><i class="fa-solid fa-arrow-right-to-bracket me-1"></i> Đăng nhập</span>
+                                            break;
+                                        case "DANG_NHAP_THAT_BAI":
+                                            <span class="badge bg-danger-subtle text-danger border border-danger"><i class="fa-solid fa-triangle-exclamation me-1"></i> Sai mật khẩu</span>
+                                            break;
+                                        case "KHOA_TAI_KHOAN":
+                                            <span class="badge bg-danger"><i class="fa-solid fa-lock me-1"></i> Khóa tài khoản</span>
+                                            break;
+                                        case "XUAT_LEN_QUAY":
+                                            <span class="badge bg-secondary text-white">Xuất lên quầy (FEFO)</span>
+                                            break;
+                                        case "DUYET_TRA_HANG":
+                                            <span class="badge bg-success text-white">Duyệt trả hàng</span>
+                                            break;
+                                        default:
+                                            <span class="badge bg-light text-dark border">@log.HanhDong</span>
+                                            break;
+                                    }
+                                </td>
+                                <td>
+                                    <span class="fw-semibold text-secondary">@log.DoiTuong</span>
+                                    @if (!string.IsNullOrEmpty(log.MaDoiTuong))
+                                    {
+                                        <span class="badge bg-dark ms-1">#@log.MaDoiTuong</span>
+                                    }
+                                </td>
+                                <td>
+                                    <div class="font-monospace text-muted small">@log.DiaChiIP</div>
+                                    <div class="text-truncate text-muted" style="max-width: 140px; font-size: 0.7rem;" title="@log.ThietBi">@log.ThietBi</div>
+                                </td>
+                                <td>
+                                    @if (!string.IsNullOrEmpty(log.GiaTriCu))
+                                    {
+                                        <div class="text-danger small text-decoration-line-through">Cũ: @log.GiaTriCu</div>
+                                    }
+                                    <div class="text-dark small">@log.GiaTriMoi</div>
+                                </td>
+                            </tr>
+                        }
+                    }
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>

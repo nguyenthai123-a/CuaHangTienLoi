@@ -1,0 +1,43 @@
+## Visual Studio / .NET Core
+[Bb]in/
+[Oo]bj/
+[Ll]og/
+[Ll]ogs/
+.vs/
+.vscode/
+*.user
+*.userosscache
+*.sln.docstates
+*.suo
+
+## Build results
+[Dd]ebug/
+[Rr]elease/
+x64/
+x86/
+[Aa]rm/
+[Aa]rm64/
+bld/
+[Bb]uild/
+
+## ASP.NET temporary files
+Generated\ Files/
+_ReSharper*/
+*.dotCover
+
+## OS generated files
+.DS_Store
+Thumbs.db
+desktop.ini
+
+## Node / Frontend
+node_modules/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+## Antigravity / Agent Scratch & System
+.gemini/
+scratch/
+.system_generated/
+.user_uploaded/

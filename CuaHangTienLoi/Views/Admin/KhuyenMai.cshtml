@@ -1,0 +1,158 @@
+@model List<CuaHangTienLoi.Models.KhuyenMai>
+@{
+    ViewData["Title"] = "Quản lý Khuyến mãi";
+    ViewBag.ActiveMenu = "KhuyenMai";
+    var products = ViewBag.Products as List<CuaHangTienLoi.Models.HangHoa> ?? new();
+}
+
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <div>
+        <h4 class="fw-bold mb-1"><i class="fa-solid fa-tags text-primary me-2"></i> Chương Trình Khuyến Mãi & Giảm Giá</h4>
+        <p class="text-muted small mb-0">Tự động áp dụng giảm giá trên màn hình POS khi quét sản phẩm hợp lệ</p>
+    </div>
+    <button class="btn btn-primary fw-semibold shadow-sm" data-bs-toggle="modal" data-bs-target="#modalNewKM">
+        <i class="fa-solid fa-plus me-1"></i> Tạo Chương Trình Khuyến Mãi
+    </button>
+</div>
+
+<!-- Bảng chương trình khuyến mãi -->
+<div class="card shadow-sm border-0">
+    <div class="card-body p-0">
+        <div class="table-responsive">
+            <table class="table table-hover align-middle mb-0">
+                <thead class="table-light">
+                    <tr>
+                        <th class="ps-3">Mã KM</th>
+                        <th>Tên Chương Trình</th>
+                        <th>Loại Giảm</th>
+                        <th class="text-end">Mức Giảm</th>
+                        <th>Bắt Đầu</th>
+                        <th>Kết Thúc</th>
+                        <th class="text-center">Trạng Thái</th>
+                        <th class="text-center pe-3">Hành Động</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @if (Model.Count == 0)
+                    {
+                        <tr>
+                            <td colspan="8" class="text-center py-4 text-muted">Chưa có chương trình khuyến mãi nào</td>
+                        </tr>
+                    }
+                    else
+                    {
+                        foreach (var km in Model)
+                        {
+                            bool isRunning = (km.TrangThai == "DANG_CHAY" && DateTime.Now >= km.NgayBatDau && DateTime.Now <= km.NgayKetThuc);
+                            <tr>
+                                <td class="ps-3 fw-bold text-secondary">#@km.MaKM</td>
+                                <td class="fw-bold text-dark">@km.TenKM</td>
+                                <td>
+                                    <span class="badge @(km.LoaiGiam == "PHAN_TRAM" ? "bg-info text-dark" : "bg-success")">
+                                        @(km.LoaiGiam == "PHAN_TRAM" ? "Phần trăm (%)" : "Số tiền cố định (đ)")
+                                    </span>
+                                </td>
+                                <td class="text-end font-monospace fw-bold text-primary">
+                                    @(km.LoaiGiam == "PHAN_TRAM" ? $"{km.GiaTri}%" : $"{km.GiaTri:N0}đ")
+                                </td>
+                                <td class="small font-monospace">@km.NgayBatDau.ToString("dd/MM/yyyy HH:mm")</td>
+                                <td class="small font-monospace">@km.NgayKetThuc.ToString("dd/MM/yyyy HH:mm")</td>
+                                <td class="text-center">
+                                    @if (isRunning)
+                                    {
+                                        <span class="badge bg-success-subtle text-success border border-success">
+                                            <i class="fa-solid fa-circle text-success fa-beat me-1" style="font-size: 0.5rem;"></i> Đang chạy
+                                        </span>
+                                    }
+                                    else
+                                    {
+                                        <span class="badge bg-secondary-subtle text-secondary border">Đã kết thúc</span>
+                                    }
+                                </td>
+                                <td class="text-center pe-3">
+                                    @if (km.TrangThai == "DANG_CHAY")
+                                    {
+                                        <form asp-action="KetThucKhuyenMai" method="post" class="d-inline" onsubmit="return confirm('Bạn có chắc chắn muốn kết thúc sớm chương trình này?');">
+                                            @Html.AntiForgeryToken()
+                                            <input type="hidden" name="id" value="@km.MaKM" />
+                                            <button type="submit" class="btn btn-outline-danger btn-sm py-0 px-2">
+                                                <i class="fa-solid fa-stop me-1"></i> Kết thúc sớm
+                                            </button>
+                                        </form>
+                                    }
+                                </td>
+                            </tr>
+                        }
+                    }
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+<!-- Modal Tạo Khuyến Mãi Mới -->
+<div class="modal fade" id="modalNewKM" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered modal-lg">
+        <div class="modal-content shadow border-0">
+            <div class="modal-header bg-primary text-white">
+                <h5 class="modal-title"><i class="fa-solid fa-tags me-2"></i> Tạo Chương Trình Khuyến Mãi Mới</h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <form asp-action="TaoKhuyenMai" method="post">
+                @Html.AntiForgeryToken()
+                <div class="modal-body p-4">
+                    <div class="mb-3">
+                        <label class="form-label fw-bold">Tên chương trình khuyến mãi <span class="text-danger">*</span></label>
+                        <input type="text" name="TenKM" class="form-control" placeholder="VD: Khuyến mãi mùa tựu trường - Giảm 15% Sữa" required />
+                    </div>
+
+                    <div class="row g-3 mb-3">
+                        <div class="col-md-6">
+                            <label class="form-label fw-bold">Hình thức giảm giá <span class="text-danger">*</span></label>
+                            <select name="LoaiGiam" class="form-select" id="selectLoaiGiam">
+                                <option value="PHAN_TRAM">Giảm theo Phần trăm (%)</option>
+                                <option value="SO_TIEN">Giảm theo Số tiền mặt (VNĐ)</option>
+                            </select>
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label fw-bold">Giá trị giảm <span class="text-danger">*</span></label>
+                            <input type="number" name="GiaTri" class="form-control font-monospace" min="1" value="10" required />
+                        </div>
+                    </div>
+
+                    <div class="row g-3 mb-3">
+                        <div class="col-md-6">
+                            <label class="form-label fw-bold">Thời gian bắt đầu <span class="text-danger">*</span></label>
+                            <input type="datetime-local" name="NgayBatDau" class="form-control" value="@DateTime.Now.ToString("yyyy-MM-ddTHH:mm")" required />
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label fw-bold">Thời gian kết thúc <span class="text-danger">*</span></label>
+                            <input type="datetime-local" name="NgayKetThuc" class="form-control" value="@DateTime.Now.AddDays(14).ToString("yyyy-MM-ddTHH:mm")" required />
+                        </div>
+                    </div>
+
+                    <div class="mb-3">
+                        <label class="form-label fw-bold">Chọn các sản phẩm áp dụng khuyến mãi:</label>
+                        <div class="border rounded p-3" style="max-height: 200px; overflow-y: auto;">
+                            @foreach (var p in products)
+                            {
+                                <div class="form-check">
+                                    <input class="form-check-input" type="checkbox" name="selectedProducts" value="@p.MaHang" id="km_p_@p.MaHang">
+                                    <label class="form-check-label small" for="km_p_@p.MaHang">
+                                        <strong>@p.TenHang</strong> - Giá bán: @p.GiaBan.ToString("N0")đ (@p.DonViTinh)
+                                    </label>
+                                </div>
+                            }
+                        </div>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Hủy</button>
+                    <button type="submit" class="btn btn-primary px-4 fw-bold">
+                        <i class="fa-solid fa-check me-1"></i> Lưu & Kích Hoạt Khuyến Mãi
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>

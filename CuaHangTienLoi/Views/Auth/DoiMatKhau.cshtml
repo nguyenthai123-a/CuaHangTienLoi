@@ -1,0 +1,45 @@
+@model CuaHangTienLoi.Models.ChangePasswordViewModel
+@{
+    ViewData["Title"] = "Đổi mật khẩu";
+}
+<div class="row justify-content-center">
+    <div class="col-md-6 col-lg-5">
+        <div class="card shadow-sm border-0">
+            <div class="card-header bg-white py-3">
+                <h5 class="card-title mb-0 fw-bold text-primary">
+                    <i class="fa-solid fa-key me-2"></i> Đổi Mật Khẩu Cá Nhân
+                </h5>
+            </div>
+            <div class="card-body p-4">
+                <form asp-action="DoiMatKhau" method="post">
+                    @Html.AntiForgeryToken()
+                    @if (!ViewData.ModelState.IsValid)
+                    {
+                        <div class="alert alert-danger py-2 small">
+                            @Html.ValidationSummary(false, "", new { @class = "mb-0 list-unstyled" })
+                        </div>
+                    }
+
+                    <div class="mb-3">
+                        <label asp-for="MatKhauCu" class="form-label fw-semibold">Mật khẩu hiện tại</label>
+                        <input asp-for="MatKhauCu" class="form-control" placeholder="Nhập mật khẩu hiện tại" required />
+                    </div>
+
+                    <div class="mb-3">
+                        <label asp-for="MatKhauMoi" class="form-label fw-semibold">Mật khẩu mới</label>
+                        <input asp-for="MatKhauMoi" class="form-control" placeholder="Tối thiểu 6 ký tự" required />
+                    </div>
+
+                    <div class="mb-4">
+                        <label asp-for="XacNhanMatKhauMoi" class="form-label fw-semibold">Xác nhận mật khẩu mới</label>
+                        <input asp-for="XacNhanMatKhauMoi" class="form-control" placeholder="Nhập lại mật khẩu mới" required />
+                    </div>
+
+                    <button type="submit" class="btn btn-primary w-100 py-2 fw-bold">
+                        <i class="fa-solid fa-check me-2"></i> Cập nhật mật khẩu
+                    </button>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>

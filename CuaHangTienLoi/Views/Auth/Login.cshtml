@@ -1,0 +1,140 @@
+@model CuaHangTienLoi.Models.LoginViewModel
+@{
+    Layout = null;
+}
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Đăng nhập hệ thống - Cửa Hàng Tiện Lợi 24/7</title>
+    <!-- Bootstrap 5 CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <!-- Font Awesome 6 -->
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css" rel="stylesheet">
+    <!-- Google Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="~/css/site.css" />
+    <style>
+        body {
+            background: linear-gradient(135deg, #1e293b 0%, #0f172a 100%);
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-family: 'Inter', sans-serif;
+        }
+        .login-card {
+            width: 100%;
+            max-width: 480px;
+            background: #ffffff;
+            border-radius: 1rem;
+            box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.35);
+            overflow: hidden;
+        }
+        .quick-role-btn {
+            font-size: 0.78rem;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+        .quick-role-btn:hover {
+            transform: translateY(-2px);
+        }
+    </style>
+</head>
+<body>
+    <div class="login-card p-4 p-sm-5 m-3">
+        <!-- Logo & Brand Header -->
+        <div class="text-center mb-4">
+            <div class="d-inline-flex align-items-center justify-content-center bg-primary text-white rounded-circle shadow mb-2" style="width: 64px; height: 64px;">
+                <i class="fa-solid fa-store fa-2x text-warning"></i>
+            </div>
+            <h4 class="fw-bold text-dark mt-2 mb-0">CỬA HÀNG TIỆN LỢI 24/7</h4>
+            <p class="text-muted small">Hệ Thống Quản Lý Kho & Bán Hàng Tại Quầy</p>
+        </div>
+
+        <!-- Alert messages -->
+        @if (!ViewData.ModelState.IsValid)
+        {
+            <div class="alert alert-danger py-2 small shadow-sm" role="alert">
+                <i class="fa-solid fa-circle-exclamation me-1"></i>
+                @Html.ValidationSummary(false, "", new { @class = "text-danger list-unstyled mb-0" })
+            </div>
+        }
+
+        <!-- Login Form -->
+        <form asp-action="Login" method="post">
+            @Html.AntiForgeryToken()
+            <input type="hidden" asp-for="ReturnUrl" />
+
+            <div class="mb-3">
+                <label asp-for="TenDangNhap" class="form-label fw-semibold small text-secondary">Tên đăng nhập</label>
+                <div class="input-group">
+                    <span class="input-group-text bg-light border-end-0 text-muted"><i class="fa-solid fa-user"></i></span>
+                    <input asp-for="TenDangNhap" class="form-control border-start-0 ps-0" placeholder="Nhập tên đăng nhập" autofocus id="inputUsername" required />
+                </div>
+            </div>
+
+            <div class="mb-3">
+                <label asp-for="MatKhau" class="form-label fw-semibold small text-secondary">Mật khẩu</label>
+                <div class="input-group">
+                    <span class="input-group-text bg-light border-end-0 text-muted"><i class="fa-solid fa-lock"></i></span>
+                    <input asp-for="MatKhau" type="password" class="form-control border-start-0 ps-0" placeholder="Nhập mật khẩu" id="inputPassword" required />
+                </div>
+            </div>
+
+            <div class="d-flex justify-content-between align-items-center mb-4">
+                <small class="text-muted">
+                    <i class="fa-solid fa-shield-halved text-success me-1"></i> Bcrypt Salted Hash
+                </small>
+                <small class="text-danger fw-semibold" style="font-size: 0.75rem;">
+                    <i class="fa-solid fa-triangle-exclamation"></i> Tự khóa sau 5 lần sai
+                </small>
+            </div>
+
+            <button type="submit" class="btn btn-primary w-100 py-2 fw-bold shadow-sm mb-4">
+                <i class="fa-solid fa-right-to-bracket me-2"></i> Đăng nhập hệ thống
+            </button>
+        </form>
+
+        <!-- Quick Demo Credentials Box -->
+        <div class="bg-light p-3 rounded-3 border">
+            <div class="fw-semibold text-secondary small mb-2 d-flex align-items-center justify-content-between">
+                <span><i class="fa-solid fa-bolt text-warning me-1"></i> Tài khoản mẫu dùng thử:</span>
+                <span class="badge bg-secondary" style="font-size: 0.65rem;">Click để điền</span>
+            </div>
+            <div class="row g-2">
+                <div class="col-4">
+                    <button type="button" class="btn btn-outline-primary btn-sm w-100 py-1 quick-role-btn text-start" onclick="fillCreds('admin', 'Admin@123')">
+                        <div class="fw-bold">Quản lý</div>
+                        <small class="text-muted" style="font-size: 0.68rem;">admin</small>
+                    </button>
+                </div>
+                <div class="col-4">
+                    <button type="button" class="btn btn-outline-info btn-sm w-100 py-1 quick-role-btn text-start" onclick="fillCreds('kho01', 'Kho@123')">
+                        <div class="fw-bold">Thủ kho</div>
+                        <small class="text-muted" style="font-size: 0.68rem;">kho01</small>
+                    </button>
+                </div>
+                <div class="col-4">
+                    <button type="button" class="btn btn-outline-success btn-sm w-100 py-1 quick-role-btn text-start" onclick="fillCreds('thungan01', 'ThuNgan@123')">
+                        <div class="fw-bold">Thu ngân</div>
+                        <small class="text-muted" style="font-size: 0.68rem;">thungan01</small>
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <div class="text-center mt-3 text-muted small" style="font-size: 0.72rem;">
+            Microsoft SQL Server ACID • FEFO Inventory Engine • Audit Logging
+        </div>
+    </div>
+
+    <script>
+        function fillCreds(u, p) {
+            document.getElementById('inputUsername').value = u;
+            document.getElementById('inputPassword').value = p;
+        }
+    </script>
+</body>
+</html>

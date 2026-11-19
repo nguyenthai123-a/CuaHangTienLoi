@@ -1,0 +1,207 @@
+@model CuaHangTienLoi.Models.KiemKeViewModel
+@{
+    ViewData["Title"] = "Kiểm Kê Kho & Quầy";
+    ViewBag.ActiveMenu = "KiemKe";
+    var phieuList = ViewBag.PhieuList as List<CuaHangTienLoi.Models.PhieuKiemKe> ?? new();
+    var lots = ViewBag.Lots as List<CuaHangTienLoi.Models.LoHang> ?? new();
+}
+
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <div>
+        <h4 class="fw-bold mb-1"><i class="fa-solid fa-clipboard-check text-primary me-2"></i> Phiếu Kiểm Kê & Điều Chỉnh Chênh Lệch</h4>
+        <p class="text-muted small mb-0">Đối chiếu số lượng tồn hệ thống và thực tế kiểm đếm, phê duyệt điều chỉnh tồn kho</p>
+    </div>
+    <button class="btn btn-primary fw-semibold shadow-sm" type="button" data-bs-toggle="collapse" data-bs-target="#collapseNewKK">
+        <i class="fa-solid fa-plus me-1"></i> Tạo Phiếu Kiểm Kê Mới
+    </button>
+</div>
+
+<!-- Form Tạo Phiếu Kiểm Kê (Collapse) -->
+<div class="collapse mb-4" id="collapseNewKK">
+    <div class="card shadow-sm border-0">
+        <div class="card-header bg-primary text-white py-2">
+            <h6 class="mb-0 fw-bold"><i class="fa-solid fa-file-pen me-2"></i> Lập Bảng Kiểm Đếm Thực Tế Mới</h6>
+        </div>
+        <div class="card-body p-4">
+            <form asp-action="KiemKe" method="post">
+                @Html.AntiForgeryToken()
+
+                <div class="row g-3 mb-3">
+                    <div class="col-md-4">
+                        <label asp-for="KhuVuc" class="form-label fw-bold">Khu Vực Kiểm Kê</label>
+                        <select asp-for="KhuVuc" class="form-select" id="selectKhuVucKK">
+                            <option value="QUAY">Tồn Tại Quầy Bán Hàng</option>
+                            <option value="KHO">Tồn Tại Kho Chứa</option>
+                        </select>
+                    </div>
+                    <div class="col-md-8 d-flex align-items-end text-muted small pb-2">
+                        <i class="fa-solid fa-circle-info text-primary me-1"></i> 
+                        Nhập số lượng thực tế kiểm đếm được. Hệ thống sẽ tự động tính toán chênh lệch (Thực tế - Hệ thống).
+                    </div>
+                </div>
+
+                <div class="table-responsive mb-3">
+                    <table class="table table-bordered table-sm align-middle">
+                        <thead class="table-light">
+                            <tr>
+                                <th>Lô Hàng</th>
+                                <th>Tên Sản Phẩm</th>
+                                <th>Hạn Dùng</th>
+                                <th class="text-end" style="width: 15%;">SL Hệ Thống</th>
+                                <th class="text-end" style="width: 18%;">SL Thực Tế</th>
+                                <th class="text-end" style="width: 15%;">Chênh Lệch</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @for (int i = 0; i < Math.Min(lots.Count, 10); i++)
+                            {
+                                var l = lots[i];
+                                <tr>
+                                    <td>
+                                        <input type="hidden" name="ChiTiet[@i].MaLo" value="@l.MaLo" />
+                                        <span class="badge bg-light text-dark border font-monospace">@l.SoLo</span>
+                                    </td>
+                                    <td class="fw-semibold">@l.TenHang</td>
+                                    <td class="small font-monospace">@l.HanSuDung.ToString("dd/MM/yyyy")</td>
+                                    <td class="text-end">
+                                        <input type="number" name="ChiTiet[@i].SlHeThong" class="form-control form-control-sm text-end font-monospace input-hethong" 
+                                               value="@l.SlTonQuay" readonly />
+                                    </td>
+                                    <td class="text-end">
+                                        <input type="number" name="ChiTiet[@i].SlThucTe" class="form-control form-control-sm text-end font-monospace fw-bold input-thucte" 
+                                               value="@l.SlTonQuay" min="0" required />
+                                    </td>
+                                    <td class="text-end font-monospace fw-bold cell-chenhlech text-success">
+                                        0
+                                    </td>
+                                </tr>
+                            }
+                        </tbody>
+                    </table>
+                </div>
+
+                <div class="d-flex justify-content-end gap-2">
+                    <button type="button" class="btn btn-secondary px-3" data-bs-toggle="collapse" data-bs-target="#collapseNewKK">Đóng</button>
+                    <button type="submit" class="btn btn-primary px-4 fw-bold">
+                        <i class="fa-solid fa-paper-plane me-1"></i> GỬI PHIẾU KIỂM KÊ CHỜ DUYỆT
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<!-- Danh sách phiếu kiểm kê đã lập -->
+<div class="card shadow-sm border-0">
+    <div class="card-header bg-white py-3">
+        <h6 class="mb-0 fw-bold text-dark"><i class="fa-solid fa-clock-rotate-left me-2 text-primary"></i> Lịch Sử Các Đợt Kiểm Kê</h6>
+    </div>
+    <div class="card-body p-0">
+        <div class="table-responsive">
+            <table class="table table-hover align-middle mb-0">
+                <thead class="table-light">
+                    <tr>
+                        <th class="ps-3">Số Phiếu</th>
+                        <th>Ngày Kiểm Kê</th>
+                        <th>Khu Vực</th>
+                        <th>Người Lập</th>
+                        <th>Người Duyệt</th>
+                        <th class="text-center">Trạng Thái</th>
+                        <th class="text-center pe-3">Hành Động</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @if (phieuList.Count == 0)
+                    {
+                        <tr>
+                            <td colspan="7" class="text-center py-4 text-muted">Chưa có phiếu kiểm kê nào</td>
+                        </tr>
+                    }
+                    else
+                    {
+                        foreach (var p in phieuList)
+                        {
+                            <tr>
+                                <td class="ps-3 fw-bold text-primary">@p.SoPhieuKiemKe</td>
+                                <td>@p.NgayKiemKe.ToString("dd/MM/yyyy")</td>
+                                <td>
+                                    <span class="badge @(p.KhuVuc == "QUAY" ? "bg-info text-dark" : "bg-secondary text-white")">
+                                        @p.KhuVuc
+                                    </span>
+                                </td>
+                                <td>@p.TenNVLap</td>
+                                <td>@(p.TenNVDuyet ?? "--")</td>
+                                <td class="text-center">
+                                    @if (p.TrangThaiDuyet == "CHO_DUYET")
+                                    {
+                                        <span class="badge bg-warning text-dark">Chờ Quản Lý Duyệt</span>
+                                    }
+                                    else if (p.TrangThaiDuyet == "DA_DUYET")
+                                    {
+                                        <span class="badge bg-success">Đã Duyệt Điều Chỉnh</span>
+                                    }
+                                    else
+                                    {
+                                        <span class="badge bg-danger">Từ Chối</span>
+                                    }
+                                </td>
+                                <td class="text-center pe-3">
+                                    @if (p.TrangThaiDuyet == "CHO_DUYET")
+                                    {
+                                        <div class="d-inline-flex gap-1">
+                                            <form asp-action="DuyetKiemKe" method="post" class="d-inline">
+                                                @Html.AntiForgeryToken()
+                                                <input type="hidden" name="id" value="@p.MaKK" />
+                                                <input type="hidden" name="dongY" value="true" />
+                                                <button type="submit" class="btn btn-success btn-sm py-0 px-2" title="Duyệt điều chỉnh tồn">
+                                                    <i class="fa-solid fa-check"></i> Duyệt
+                                                </button>
+                                            </form>
+                                            <form asp-action="DuyetKiemKe" method="post" class="d-inline">
+                                                @Html.AntiForgeryToken()
+                                                <input type="hidden" name="id" value="@p.MaKK" />
+                                                <input type="hidden" name="dongY" value="false" />
+                                                <button type="submit" class="btn btn-outline-danger btn-sm py-0 px-2" title="Từ chối">
+                                                    <i class="fa-solid fa-xmark"></i>
+                                                </button>
+                                            </form>
+                                        </div>
+                                    }
+                                    else
+                                    {
+                                        <span class="text-muted small">Hoàn tất</span>
+                                    }
+                                </td>
+                            </tr>
+                        }
+                    }
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script>
+        document.querySelectorAll('.input-thucte').forEach(input => {
+            input.addEventListener('input', function () {
+                const tr = this.closest('tr');
+                const ht = parseFloat(tr.querySelector('.input-hethong').value || '0');
+                const tt = parseFloat(this.value || '0');
+                const diff = tt - ht;
+                const cell = tr.querySelector('.cell-chenhlech');
+
+                if (diff === 0) {
+                    cell.innerText = '0';
+                    cell.className = 'text-end font-monospace fw-bold cell-chenhlech text-success';
+                } else if (diff > 0) {
+                    cell.innerText = '+' + diff;
+                    cell.className = 'text-end font-monospace fw-bold cell-chenhlech text-primary';
+                } else {
+                    cell.innerText = diff;
+                    cell.className = 'text-end font-monospace fw-bold cell-chenhlech text-danger';
+                }
+            });
+        });
+    </script>
+}

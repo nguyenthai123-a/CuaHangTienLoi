@@ -1,0 +1,158 @@
+@model List<CuaHangTienLoi.Models.PhieuTraHang>
+@{
+    ViewData["Title"] = "Duyệt Đổi / Trả Hàng";
+    ViewBag.ActiveMenu = "DoiTra";
+}
+
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <div>
+        <h4 class="fw-bold mb-1"><i class="fa-solid fa-rotate-left text-primary me-2"></i> Phê Duyệt Phiếu Đổi / Trả Hàng</h4>
+        <p class="text-muted small mb-0">Quản lý xem xét yêu cầu hoàn trả, phê duyệt cấp số phiếu (PT-xxxx), hoàn tiền và hoàn kho sản phẩm</p>
+    </div>
+</div>
+
+<div class="card shadow-sm border-0">
+    <div class="card-body p-0">
+        <div class="table-responsive">
+            <table class="table table-hover align-middle mb-0">
+                <thead class="table-light">
+                    <tr>
+                        <th class="ps-3">Mã Yêu Cầu</th>
+                        <th>Số Phiếu Trả</th>
+                        <th>Hóa Đơn Gốc</th>
+                        <th>Ngày Lập</th>
+                        <th>Lý Do Trả</th>
+                        <th>Nhân Viên Lập</th>
+                        <th class="text-end">Tiền Hoàn</th>
+                        <th class="text-center">Trạng Thái</th>
+                        <th class="text-center pe-3">Phê Duyệt</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @if (Model.Count == 0)
+                    {
+                        <tr>
+                            <td colspan="9" class="text-center py-4 text-muted">Không có yêu cầu đổi trả hàng nào</td>
+                        </tr>
+                    }
+                    else
+                    {
+                        foreach (var pt in Model)
+                        {
+                            <tr>
+                                <td class="ps-3 fw-bold text-secondary">#@pt.MaPhieuTra</td>
+                                <td class="font-monospace fw-bold text-primary">
+                                    @(string.IsNullOrEmpty(pt.SoPhieuTra) ? "--" : pt.SoPhieuTra)
+                                </td>
+                                <td><span class="badge bg-light text-dark border font-monospace">@pt.SoHoaDon</span></td>
+                                <td class="small">@pt.NgayTra.ToString("dd/MM/yyyy")</td>
+                                <td class="text-truncate" style="max-width: 200px;" title="@pt.LyDo">@pt.LyDo</td>
+                                <td>@pt.TenNVLap</td>
+                                <td class="text-end font-monospace fw-bold text-danger">
+                                    @(pt.SoTienHoan.HasValue ? pt.SoTienHoan.Value.ToString("N0") + "đ" : "--")
+                                </td>
+                                <td class="text-center">
+                                    @if (pt.TrangThaiDuyet == "CHO_DUYET")
+                                    {
+                                        <span class="badge bg-warning text-dark">Chờ Quản lý duyệt</span>
+                                    }
+                                    else if (pt.TrangThaiDuyet == "DA_DUYET")
+                                    {
+                                        <span class="badge bg-success">Đã Hoàn Tiền (@pt.PhuongThucHoan)</span>
+                                    }
+                                    else
+                                    {
+                                        <span class="badge bg-danger">Từ Chối</span>
+                                    }
+                                </td>
+                                <td class="text-center pe-3">
+                                    @if (pt.TrangThaiDuyet == "CHO_DUYET")
+                                    {
+                                        <button type="button" class="btn btn-success btn-sm py-0 px-2" onclick="openApproveModal(@pt.MaPhieuTra, '@pt.SoHoaDon', '@pt.LyDo')">
+                                            <i class="fa-solid fa-check me-1"></i> Duyệt hoàn tiền
+                                        </button>
+                                        <form asp-action="TuChoiDoiTra" method="post" class="d-inline" onsubmit="return confirm('Bạn có chắc chắn muốn từ chối yêu cầu đổi trả này?');">
+                                            @Html.AntiForgeryToken()
+                                            <input type="hidden" name="id" value="@pt.MaPhieuTra" />
+                                            <button type="submit" class="btn btn-outline-danger btn-sm py-0 px-2" title="Từ chối">
+                                                <i class="fa-solid fa-xmark"></i>
+                                            </button>
+                                        </form>
+                                    }
+                                    else
+                                    {
+                                        <small class="text-muted">Đã duyệt bởi: @pt.TenNVDuyet</small>
+                                    }
+                                </td>
+                            </tr>
+                        }
+                    }
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+<!-- Modal Phê Duyệt Đổi Trả -->
+<div class="modal fade" id="modalApproveDoiTra" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content shadow border-0">
+            <div class="modal-header bg-success text-white">
+                <h5 class="modal-title"><i class="fa-solid fa-check-circle me-2"></i> Phê Duyệt & Hoàn Tiền Phiếu Trả</h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <form asp-action="DuyetDoiTra" method="post">
+                @Html.AntiForgeryToken()
+                <input type="hidden" name="id" id="approveMaPhieuTra" />
+
+                <div class="modal-body p-4">
+                    <div class="p-3 bg-light rounded border mb-3">
+                        <div class="d-flex justify-content-between mb-1">
+                            <span class="text-muted">Hóa đơn gốc:</span>
+                            <strong class="font-monospace text-primary" id="lblApproveHD">HD-0000</strong>
+                        </div>
+                        <div>
+                            <span class="text-muted">Lý do hoàn trả:</span>
+                            <div class="text-dark small" id="lblApproveLyDo">--</div>
+                        </div>
+                    </div>
+
+                    <div class="mb-3">
+                        <label class="form-label fw-bold">Phương thức hoàn tiền <span class="text-danger">*</span></label>
+                        <select name="phuongThucHoan" class="form-select" required>
+                            <option value="TIEN_MAT">Hoàn bằng Tiền mặt tại quầy</option>
+                            <option value="CONG_THANH_TOAN">Hoàn qua Cổng thanh toán / Chuyển khoản lại</option>
+                        </select>
+                    </div>
+
+                    <div class="mb-3">
+                        <label class="form-label fw-bold">Mã giao dịch hoàn (Tùy chọn):</label>
+                        <input type="text" name="maGiaoDichHoan" class="form-control font-monospace" placeholder="VD: REF-987654" />
+                    </div>
+
+                    <div class="alert alert-info py-2 small mb-0">
+                        <i class="fa-solid fa-circle-info me-1"></i>
+                        Hệ thống sẽ tự động cấp số <strong>PT-xxxx</strong> từ Sequence CSDL, cộng lại tồn quầy cho hàng còn dùng được và trừ điểm tích lũy của khách hàng.
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Hủy</button>
+                    <button type="submit" class="btn btn-success px-4 fw-bold">
+                        <i class="fa-solid fa-check me-1"></i> XÁC NHẬN DUYỆT & HOÀN TIỀN
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script>
+        function openApproveModal(id, hd, lyDo) {
+            document.getElementById('approveMaPhieuTra').value = id;
+            document.getElementById('lblApproveHD').innerText = hd;
+            document.getElementById('lblApproveLyDo').innerText = lyDo;
+            new bootstrap.Modal(document.getElementById('modalApproveDoiTra')).show();
+        }
+    </script>
+}

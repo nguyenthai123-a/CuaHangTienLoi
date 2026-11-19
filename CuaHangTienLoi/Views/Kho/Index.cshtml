@@ -1,0 +1,179 @@
+@model List<CuaHangTienLoi.Models.LoHang>
+@{
+    ViewData["Title"] = "Quản lý Kho & Thuật toán FEFO";
+    ViewBag.ActiveMenu = "KhoIndex";
+    var nearExpiry = ViewBag.NearExpiryLots as List<CuaHangTienLoi.Models.LoHang> ?? new();
+    var products = ViewBag.Products as List<CuaHangTienLoi.Models.HangHoa> ?? new();
+    int? selectedMaHang = ViewBag.SelectedMaHang as int?;
+}
+
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <div>
+        <h4 class="fw-bold mb-1"><i class="fa-solid fa-boxes-stacked text-primary me-2"></i> Quản Lý Tồn Kho Theo Lô & Nguyên Tắc FEFO</h4>
+        <p class="text-muted small mb-0">First Expired, First Out - Ưu tiên xuất các lô hàng có hạn sử dụng gần nhất trước</p>
+    </div>
+    <div class="d-flex gap-2">
+        <a asp-action="XuatExcel" class="btn btn-outline-success fw-semibold shadow-sm">
+            <i class="fa-solid fa-file-excel me-1"></i> Xuất File Excel
+        </a>
+        <a asp-action="NhapKho" class="btn btn-primary fw-semibold shadow-sm">
+            <i class="fa-solid fa-cart-flatbed me-1"></i> Nhập Hàng Mới
+        </a>
+        <a asp-action="XuatKho" class="btn btn-warning fw-semibold shadow-sm text-dark">
+            <i class="fa-solid fa-dolly me-1"></i> Xuất Lên Quầy (FEFO)
+        </a>
+    </div>
+</div>
+
+<!-- Near Expiry Warning Alert -->
+@if (nearExpiry.Count > 0)
+{
+    <div class="alert alert-danger border-danger shadow-sm mb-4">
+        <div class="d-flex align-items-center mb-2">
+            <i class="fa-solid fa-triangle-exclamation fa-lg text-danger me-2"></i>
+            <h6 class="fw-bold text-danger mb-0">CẢNH BÁO: CÓ @nearExpiry.Count LÔ HÀNG SẮP HẾT HẠN (DƯỚI 30 NGÀY)!</h6>
+        </div>
+        <div class="table-responsive">
+            <table class="table table-sm table-bordered bg-white mb-0 small">
+                <thead class="table-danger">
+                    <tr>
+                        <th>Sản phẩm</th>
+                        <th>Số Lô</th>
+                        <th>Hạn dùng</th>
+                        <th>Còn lại</th>
+                        <th class="text-end">Tồn kho</th>
+                        <th class="text-end">Tồn quầy</th>
+                        <th>Hành động đề xuất</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach (var exp in nearExpiry)
+                    {
+                        <tr>
+                            <td class="fw-semibold">@exp.TenHang</td>
+                            <td><span class="badge bg-light text-dark border">@exp.SoLo</span></td>
+                            <td class="text-danger fw-bold font-monospace">@exp.HanSuDung.ToString("dd/MM/yyyy")</td>
+                            <td class="text-danger fw-bold">@exp.SoNgayConLai ngày</td>
+                            <td class="text-end font-monospace">@exp.SlTonKho</td>
+                            <td class="text-end font-monospace">@exp.SlTonQuay</td>
+                            <td>
+                                @if (exp.SoNgayConLai <= 5)
+                                {
+                                    <span class="text-danger fw-bold"><i class="fa-solid fa-triangle-exclamation"></i> Lập phiếu Xuất Hủy</span>
+                                }
+                                else
+                                {
+                                    <span class="text-warning fw-semibold"><i class="fa-solid fa-bolt"></i> Giảm giá khuyến mãi / Đẩy quầy</span>
+                                }
+                            </td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+    </div>
+}
+
+<!-- Filter Bar -->
+<div class="card shadow-sm border-0 mb-4">
+    <div class="card-body p-3">
+        <form method="get" class="row g-2 align-items-center">
+            <div class="col-md-5">
+                <select name="maHang" class="form-select" onchange="this.form.submit()">
+                    <option value="">-- Tất cả mặt hàng (@products.Count sản phẩm) --</option>
+                    @foreach (var p in products)
+                    {
+                        <option value="@p.MaHang" selected="@(selectedMaHang == p.MaHang ? "selected" : null)">
+                            [@p.MaVach] @p.TenHang (Quầy: @p.TongTonQuay, Kho: @p.TongTonKho)
+                        </option>
+                    }
+                </select>
+            </div>
+            <div class="col-md-7 text-md-end text-muted small">
+                <i class="fa-solid fa-circle-info text-primary me-1"></i>
+                Hàng hóa hiển thị được tự động sắp xếp theo thứ tự <strong>Hạn dùng tăng dần (FEFO)</strong>
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- Lô hàng table -->
+<div class="card shadow-sm border-0">
+    <div class="card-body p-0">
+        <div class="table-responsive">
+            <table class="table table-hover align-middle mb-0">
+                <thead class="table-light">
+                    <tr>
+                        <th class="ps-3">Mã Lô</th>
+                        <th>Tên Sản Phẩm</th>
+                        <th>Số Lô</th>
+                        <th>Ngày Nhập</th>
+                        <th>Hạn Sử Dụng (HSD)</th>
+                        <th>Số Ngày Còn</th>
+                        <th class="text-end">Tồn Kho</th>
+                        <th class="text-end">Tồn Quầy</th>
+                        <th class="text-center pe-3">Trạng Thái FEFO</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @if (Model == null || Model.Count == 0)
+                    {
+                        <tr>
+                            <td colspan="9" class="text-center py-4 text-muted">Không có lô hàng nào phù hợp điều kiện lọc</td>
+                        </tr>
+                    }
+                    else
+                    {
+                        int currentGroupHang = -1;
+                        foreach (var lot in Model)
+                        {
+                            bool isFirstInGroup = (lot.MaHang != currentGroupHang);
+                            currentGroupHang = lot.MaHang;
+
+                            <tr>
+                                <td class="ps-3 fw-bold text-secondary">#@lot.MaLo</td>
+                                <td>
+                                    <div class="fw-semibold text-dark">@lot.TenHang</div>
+                                    <small class="text-muted font-monospace" style="font-size: 0.72rem;">@lot.MaVach</small>
+                                </td>
+                                <td><span class="badge bg-light text-dark border font-monospace">@lot.SoLo</span></td>
+                                <td class="small text-muted">@lot.NgayNhap.ToString("dd/MM/yyyy")</td>
+                                <td class="font-monospace fw-bold @(lot.SapHetHan ? "text-danger" : "text-dark")">
+                                    @lot.HanSuDung.ToString("dd/MM/yyyy")
+                                </td>
+                                <td>
+                                    @if (lot.SoNgayConLai <= 10)
+                                    {
+                                        <span class="badge badge-fefo-danger">@lot.SoNgayConLai ngày (Khẩn cấp)</span>
+                                    }
+                                    else if (lot.SoNgayConLai <= 30)
+                                    {
+                                        <span class="badge badge-fefo-warning">@lot.SoNgayConLai ngày (Sắp hết hạn)</span>
+                                    }
+                                    else
+                                    {
+                                        <span class="badge badge-fefo-safe">@lot.SoNgayConLai ngày (An toàn)</span>
+                                    }
+                                </td>
+                                <td class="text-end font-monospace fw-semibold">@lot.SlTonKho @lot.DonViTinh</td>
+                                <td class="text-end font-monospace fw-bold text-primary">@lot.SlTonQuay @lot.DonViTinh</td>
+                                <td class="text-center pe-3">
+                                    @if (isFirstInGroup && (lot.SlTonQuay > 0 || lot.SlTonKho > 0))
+                                    {
+                                        <span class="badge bg-primary px-2 py-1" title="Lô có HSD sớm nhất của mặt hàng này">
+                                            <i class="fa-solid fa-arrow-up-right-dots me-1"></i> Ưu tiên xuất trước (FEFO)
+                                        </span>
+                                    }
+                                    else
+                                    {
+                                        <span class="text-muted small">Lô dự phòng sau</span>
+                                    }
+                                </td>
+                            </tr>
+                        }
+                    }
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>

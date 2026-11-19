@@ -1,0 +1,147 @@
+@model List<CuaHangTienLoi.Models.TheKho>
+@{
+    ViewData["Title"] = "Sổ Thẻ Kho & Truy Vết Tồn Kho";
+    ViewBag.ActiveMenu = "TheKho";
+    var products = ViewBag.Products as List<CuaHangTienLoi.Models.HangHoa> ?? new();
+    var lots = ViewBag.Lots as List<CuaHangTienLoi.Models.LoHang> ?? new();
+    int? selectedMaHang = ViewBag.SelectedMaHang as int?;
+    int? selectedMaLo = ViewBag.SelectedMaLo as int?;
+    string? fromDate = ViewBag.FromDate as string;
+    string? toDate = ViewBag.ToDate as string;
+}
+
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <div>
+        <h4 class="fw-bold mb-1"><i class="fa-solid fa-book-bookmark text-primary me-2"></i> Sổ Thẻ Kho & Lịch Sử Xuất Nhập Tồn</h4>
+        <p class="text-muted small mb-0">Truy vết chi tiết mọi biến động nhập, xuất, bán hàng, hủy và kiểm kê của từng mặt hàng và lô hàng</p>
+    </div>
+</div>
+
+<!-- Bộ lọc tìm kiếm -->
+<div class="card shadow-sm border-0 mb-4">
+    <div class="card-body p-3">
+        <form method="get" class="row g-2 align-items-end">
+            <div class="col-md-3">
+                <label class="form-label small fw-bold">Sản phẩm</label>
+                <select name="maHang" class="form-select form-select-sm">
+                    <option value="">-- Tất cả sản phẩm --</option>
+                    @foreach (var p in products)
+                    {
+                        <option value="@p.MaHang" selected="@(selectedMaHang == p.MaHang ? "selected" : null)">
+                            @p.TenHang
+                        </option>
+                    }
+                </select>
+            </div>
+            <div class="col-md-3">
+                <label class="form-label small fw-bold">Lô hàng</label>
+                <select name="maLo" class="form-select form-select-sm">
+                    <option value="">-- Tất cả lô hàng --</option>
+                    @foreach (var l in lots)
+                    {
+                        <option value="@l.MaLo" selected="@(selectedMaLo == l.MaLo ? "selected" : null)">
+                            [@l.SoLo] @l.TenHang (HSD: @l.HanSuDung.ToString("dd/MM/yy"))
+                        </option>
+                    }
+                </select>
+            </div>
+            <div class="col-md-2">
+                <label class="form-label small fw-bold">Từ ngày</label>
+                <input type="date" name="fromDate" value="@fromDate" class="form-control form-control-sm" />
+            </div>
+            <div class="col-md-2">
+                <label class="form-label small fw-bold">Đến ngày</label>
+                <input type="date" name="toDate" value="@toDate" class="form-control form-control-sm" />
+            </div>
+            <div class="col-md-2 d-flex gap-1">
+                <button type="submit" class="btn btn-primary btn-sm flex-grow-1"><i class="fa-solid fa-filter me-1"></i> Lọc</button>
+                <a asp-action="TheKho" class="btn btn-outline-secondary btn-sm"><i class="fa-solid fa-rotate"></i></a>
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- Bảng Thẻ Kho -->
+<div class="card shadow-sm border-0">
+    <div class="card-body p-0">
+        <div class="table-responsive">
+            <table class="table table-hover align-middle mb-0">
+                <thead class="table-light">
+                    <tr>
+                        <th class="ps-3">Mã Giao Dịch</th>
+                        <th>Thời Gian</th>
+                        <th>Sản Phẩm</th>
+                        <th>Số Lô</th>
+                        <th>Khu Vực</th>
+                        <th>Loại Biến Động</th>
+                        <th>Chứng Từ</th>
+                        <th class="text-end">SL Nhập</th>
+                        <th class="text-end">SL Xuất</th>
+                        <th class="text-end pe-3">Tồn Sau GD</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @if (Model == null || Model.Count == 0)
+                    {
+                        <tr>
+                            <td colspan="10" class="text-center py-4 text-muted">Không tìm thấy bản ghi thẻ kho nào</td>
+                        </tr>
+                    }
+                    else
+                    {
+                        foreach (var row in Model)
+                        {
+                            <tr>
+                                <td class="ps-3 fw-bold text-secondary font-monospace">#@row.MaTheKho</td>
+                                <td class="small font-monospace">@row.Ngay.ToString("dd/MM/yyyy HH:mm")</td>
+                                <td class="fw-semibold">@row.TenHang</td>
+                                <td><span class="badge bg-light text-dark border font-monospace">@row.SoLo</span></td>
+                                <td>
+                                    <span class="badge @(row.KhuVuc == "QUAY" ? "bg-info text-dark" : "bg-secondary text-white")">
+                                        @row.KhuVuc
+                                    </span>
+                                </td>
+                                <td>
+                                    @switch (row.LoaiGiaoDich)
+                                    {
+                                        case "BAN":
+                                            <span class="badge bg-success-subtle text-success border border-success">Bán hàng POS</span>
+                                            break;
+                                        case "NHAP":
+                                            <span class="badge bg-primary-subtle text-primary border border-primary">Nhập kho mới</span>
+                                            break;
+                                        case "XUAT_LEN_QUAY":
+                                            <span class="badge bg-warning-subtle text-warning border border-warning">Chuyển lên quầy (FEFO)</span>
+                                            break;
+                                        case "XUAT_HUY":
+                                            <span class="badge bg-danger-subtle text-danger border border-danger">Xuất hủy hàng</span>
+                                            break;
+                                        case "TRA_HANG":
+                                            <span class="badge bg-info-subtle text-info border border-info">Đổi trả hoàn kho</span>
+                                            break;
+                                        case "KIEM_KE":
+                                            <span class="badge bg-secondary-subtle text-secondary border">Điều chỉnh kiểm kê</span>
+                                            break;
+                                        default:
+                                            <span class="badge bg-light text-dark">@row.LoaiGiaoDich</span>
+                                            break;
+                                    }
+                                </td>
+                                <td><span class="badge bg-dark">@row.LoaiChungTu #@row.MaChungTu</span></td>
+                                <td class="text-end font-monospace text-primary fw-bold">
+                                    @(row.SlNhap > 0 ? "+" + row.SlNhap : "--")
+                                </td>
+                                <td class="text-end font-monospace text-danger fw-bold">
+                                    @(row.SlXuat > 0 ? "-" + row.SlXuat : "--")
+                                </td>
+                                <td class="text-end pe-3 font-monospace fw-bold text-dark fs-6">
+                                    @row.TonSau
+                                </td>
+                            </tr>
+                        }
+                    }
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>

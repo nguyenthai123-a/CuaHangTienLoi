@@ -1,0 +1,229 @@
+@model List<CuaHangTienLoi.Models.HangHoa>
+@{
+    ViewData["Title"] = "Quản lý Hàng hóa";
+    ViewBag.ActiveMenu = "HangHoa";
+    var categories = ViewBag.Categories as List<CuaHangTienLoi.Models.NhomHang> ?? new();
+    int? selectedMaNhom = ViewBag.SelectedMaNhom as int?;
+    string? search = ViewBag.Search as string;
+}
+
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <div>
+        <h4 class="fw-bold mb-1"><i class="fa-solid fa-boxes-stacked text-primary me-2"></i> Danh Mục Hàng Hóa & Bảng Giá</h4>
+        <p class="text-muted small mb-0">Quản lý mã vạch, giá bán, giới hạn độ tuổi và định mức tồn kho</p>
+    </div>
+    <div class="d-flex gap-2">
+        <a asp-controller="Kho" asp-action="XuatExcel" class="btn btn-outline-success fw-semibold shadow-sm">
+            <i class="fa-solid fa-file-excel me-1"></i> Xuất Excel Tồn
+        </a>
+        <button class="btn btn-primary fw-semibold shadow-sm" data-bs-toggle="modal" data-bs-target="#modalNewProduct">
+            <i class="fa-solid fa-plus me-1"></i> Thêm Mặt Hàng Mới
+        </button>
+    </div>
+</div>
+
+<!-- Bộ lọc & Tìm kiếm -->
+<div class="card shadow-sm border-0 mb-4">
+    <div class="card-body p-3">
+        <form method="get" class="row g-2 align-items-center">
+            <div class="col-md-4">
+                <input type="text" name="search" value="@search" class="form-control" placeholder="Tìm theo tên hoặc mã vạch..." />
+            </div>
+            <div class="col-md-4">
+                <select name="maNhom" class="form-select" onchange="this.form.submit()">
+                    <option value="">-- Tất cả nhóm hàng --</option>
+                    @foreach (var c in categories)
+                    {
+                        <option value="@c.MaNhom" selected="@(selectedMaNhom == c.MaNhom ? "selected" : null)">
+                            @c.TenNhom
+                        </option>
+                    }
+                </select>
+            </div>
+            <div class="col-md-2">
+                <button type="submit" class="btn btn-primary w-100"><i class="fa-solid fa-magnifying-glass me-1"></i> Tìm</button>
+            </div>
+            <div class="col-md-2">
+                <a asp-action="HangHoa" class="btn btn-outline-secondary w-100"><i class="fa-solid fa-rotate me-1"></i> Đặt lại</a>
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- Bảng Hàng Hóa -->
+<div class="card shadow-sm border-0">
+    <div class="card-body p-0">
+        <div class="table-responsive">
+            <table class="table table-hover align-middle mb-0">
+                <thead class="table-light">
+                    <tr>
+                        <th class="ps-3">Mã Vạch</th>
+                        <th>Tên Hàng Hóa</th>
+                        <th>Nhóm Hàng</th>
+                        <th>ĐVT</th>
+                        <th class="text-end">Giá Nhập</th>
+                        <th class="text-end">Giá Bán</th>
+                        <th class="text-center">Độ Tuổi</th>
+                        <th class="text-end">Tồn Quầy</th>
+                        <th class="text-end">Tồn Kho</th>
+                        <th class="text-center pe-3">Sửa Giá Bán</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @if (Model.Count == 0)
+                    {
+                        <tr>
+                            <td colspan="10" class="text-center py-4 text-muted">Không tìm thấy sản phẩm nào</td>
+                        </tr>
+                    }
+                    else
+                    {
+                        foreach (var h in Model)
+                        {
+                            <tr>
+                                <td class="ps-3 font-monospace fw-bold text-secondary">@h.MaVach</td>
+                                <td>
+                                    <div class="d-flex align-items-center gap-2">
+                                        <img src="/images/products/@(h.MaHang).svg" alt="@h.TenHang" style="width: 36px; height: 36px; object-fit: contain; background: #f8fafc; border-radius: 6px; padding: 2px; border: 1px solid #e2e8f0;" onerror="this.onerror=null; this.src='/images/products/default.svg';" />
+                                        <div>
+                                            <div class="fw-bold text-dark">@h.TenHang</div>
+                                            @if (!h.TrangThaiKinhDoanh)
+                                            {
+                                                <span class="badge bg-secondary" style="font-size: 0.65rem;">Ngừng KD</span>
+                                            }
+                                        </div>
+                                    </div>
+                                </td>
+                                <td><span class="badge bg-light text-dark border">@h.TenNhom</span></td>
+                                <td>@h.DonViTinh</td>
+                                <td class="text-end font-monospace text-muted">@(h.GiaNhap.HasValue ? h.GiaNhap.Value.ToString("N0") + "đ" : "--")</td>
+                                <td class="text-end font-monospace fw-bold text-success fs-6" id="price-display-@h.MaHang">@h.GiaBan.ToString("N0")đ</td>
+                                <td class="text-center">
+                                    @if (h.GioiHanDoTuoi >= 18)
+                                    {
+                                        <span class="badge bg-danger" title="Bắt buộc thu ngân xác nhận độ tuổi trước khi bán">18+</span>
+                                    }
+                                    else
+                                    {
+                                        <span class="text-muted small">Tự do</span>
+                                    }
+                                </td>
+                                <td class="text-end font-monospace fw-bold text-primary">@h.TongTonQuay</td>
+                                <td class="text-end font-monospace">@h.TongTonKho</td>
+                                <td class="text-center pe-3">
+                                    <button type="button" class="btn btn-outline-primary btn-sm py-0 px-2" onclick="editPrice(@h.MaHang, '@h.TenHang', @h.GiaBan)">
+                                        <i class="fa-solid fa-pen-to-square"></i> Sửa giá
+                                    </button>
+                                </td>
+                            </tr>
+                        }
+                    }
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+<!-- Modal Thêm Sản Phẩm Mới -->
+<div class="modal fade" id="modalNewProduct" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content shadow border-0">
+            <div class="modal-header bg-primary text-white">
+                <h5 class="modal-title"><i class="fa-solid fa-box-open me-2"></i> Thêm Hàng Hóa Mới</h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <form asp-action="TaoHangHoa" method="post">
+                @Html.AntiForgeryToken()
+                <div class="modal-body p-4">
+                    <div class="mb-3">
+                        <label class="form-label fw-bold">Mã vạch (Barcode) <span class="text-danger">*</span></label>
+                        <input type="text" name="MaVach" class="form-control font-monospace" placeholder="VD: 893456789099" required />
+                    </div>
+
+                    <div class="mb-3">
+                        <label class="form-label fw-bold">Tên sản phẩm <span class="text-danger">*</span></label>
+                        <input type="text" name="TenHang" class="form-control" placeholder="VD: Nước tăng lực Red Bull lon 250ml" required />
+                    </div>
+
+                    <div class="row g-2 mb-3">
+                        <div class="col-6">
+                            <label class="form-label fw-bold">Nhóm hàng <span class="text-danger">*</span></label>
+                            <select name="MaNhom" class="form-select" required>
+                                @foreach (var c in categories)
+                                {
+                                    <option value="@c.MaNhom">@c.TenNhom</option>
+                                }
+                            </select>
+                        </div>
+                        <div class="col-6">
+                            <label class="form-label fw-bold">Đơn vị tính <span class="text-danger">*</span></label>
+                            <input type="text" name="DonViTinh" class="form-control" placeholder="Lon, Chai, Gói..." required />
+                        </div>
+                    </div>
+
+                    <div class="row g-2 mb-3">
+                        <div class="col-6">
+                            <label class="form-label fw-bold">Giá bán (đ) <span class="text-danger">*</span></label>
+                            <input type="number" name="GiaBan" class="form-control text-end" min="0" required />
+                        </div>
+                        <div class="col-6">
+                            <label class="form-label fw-bold">Giá nhập dự kiến (đ)</label>
+                            <input type="number" name="GiaNhap" class="form-control text-end" min="0" />
+                        </div>
+                    </div>
+
+                    <div class="row g-2 mb-3">
+                        <div class="col-6">
+                            <label class="form-label fw-bold">Định mức tồn quầy</label>
+                            <input type="number" name="DinhMucTon" class="form-control text-end" value="10" min="0" />
+                        </div>
+                        <div class="col-6">
+                            <label class="form-label fw-bold">Giới hạn độ tuổi (18+)</label>
+                            <select name="GioiHanDoTuoi" class="form-select">
+                                <option value="0">Không giới hạn (0+)</option>
+                                <option value="18">Trên 18 tuổi (Bia, Rượu, Thuốc lá)</option>
+                            </select>
+                        </div>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Hủy</button>
+                    <button type="submit" class="btn btn-primary px-4 fw-bold">
+                        <i class="fa-solid fa-check me-1"></i> Lưu Sản Phẩm
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script>
+        async function editPrice(id, name, currentPrice) {
+            const newPriceStr = prompt(`Nhập giá bán mới cho sản phẩm '${name}' (Giá hiện tại: ${currentPrice.toLocaleString('vi-VN')}đ):`, currentPrice);
+            if (newPriceStr === null) return;
+
+            const newPrice = parseFloat(newPriceStr);
+            if (isNaN(newPrice) || newPrice < 0) {
+                alert('Giá bán không hợp lệ!');
+                return;
+            }
+
+            try {
+                const res = await fetch(`/Admin/CapNhatGia?id=${id}&giaMoi=${newPrice}`, {
+                    method: 'POST'
+                });
+                const data = await res.json();
+                if (data.success) {
+                    document.getElementById(`price-display-${id}`).innerText = newPrice.toLocaleString('vi-VN') + 'đ';
+                    alert('Cập nhật giá bán thành công!');
+                } else {
+                    alert('Lỗi: ' + data.message);
+                }
+            } catch (err) {
+                console.error(err);
+                alert('Lỗi kết nối khi cập nhật giá bán.');
+            }
+        }
+    </script>
+}

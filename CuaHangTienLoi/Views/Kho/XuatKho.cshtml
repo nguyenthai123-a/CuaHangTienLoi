@@ -1,0 +1,165 @@
+@model CuaHangTienLoi.Models.XuatKhoViewModel
+@{
+    ViewData["Title"] = "Xuất Hàng Khỏi Kho";
+    ViewBag.ActiveMenu = "XuatKho";
+    var products = ViewBag.Products as List<CuaHangTienLoi.Models.HangHoa> ?? new();
+    var lots = ViewBag.Lots as List<CuaHangTienLoi.Models.LoHang> ?? new();
+    var suppliers = ViewBag.Suppliers as List<CuaHangTienLoi.Models.NhaCungCap> ?? new();
+}
+
+<div class="row justify-content-center">
+    <div class="col-lg-9">
+        <div class="card shadow-sm border-0">
+            <div class="card-header bg-white py-3 border-bottom d-flex justify-content-between align-items-center">
+                <div class="d-flex align-items-center">
+                    <div class="bg-warning text-dark rounded p-2 me-3">
+                        <i class="fa-solid fa-dolly fa-lg"></i>
+                    </div>
+                    <div>
+                        <h5 class="fw-bold mb-0 text-dark">Xuất Hàng Khỏi Kho</h5>
+                        <small class="text-muted">Xuất bổ sung lên quầy bán hàng (Chuẩn FEFO) hoặc Lập phiếu xuất hủy / Trả NCC</small>
+                    </div>
+                </div>
+                <a asp-action="Index" class="btn btn-outline-secondary btn-sm">
+                    <i class="fa-solid fa-arrow-left me-1"></i> Quay lại
+                </a>
+            </div>
+
+            <div class="card-body p-4">
+                <form asp-action="XuatKho" method="post" id="formXuatKho">
+                    @Html.AntiForgeryToken()
+
+                    @if (!ViewData.ModelState.IsValid)
+                    {
+                        <div class="alert alert-danger py-2 small mb-3">
+                            @Html.ValidationSummary(false, "", new { @class = "mb-0 list-unstyled" })
+                        </div>
+                    }
+
+                    <!-- Loại xuất -->
+                    <div class="mb-4">
+                        <label class="form-label fw-bold">Chọn Loại Hình Xuất Kho <span class="text-danger">*</span></label>
+                        <div class="row g-3">
+                            <div class="col-md-6">
+                                <div class="form-check p-3 border rounded bg-light cursor-pointer">
+                                    <input class="form-check-input ms-0 me-2" type="radio" asp-for="LoaiXuat" value="LEN_QUAY" id="radioLenQuay" checked>
+                                    <label class="form-check-label fw-bold text-primary" for="radioLenQuay">
+                                        <i class="fa-solid fa-arrow-up-right-dots me-1"></i> 1. Xuất Lên Quầy Bán Hàng (Chuẩn FEFO)
+                                    </label>
+                                    <div class="small text-muted mt-1 ps-4">
+                                        Hệ thống tự động tìm các lô có HSD gần nhất trong kho và chuyển sang tồn quầy. Hoàn tất ngay lập tức.
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="form-check p-3 border rounded bg-light cursor-pointer">
+                                    <input class="form-check-input ms-0 me-2" type="radio" asp-for="LoaiXuat" value="HUY" id="radioHuy">
+                                    <label class="form-check-label fw-bold text-danger" for="radioHuy">
+                                        <i class="fa-solid fa-trash-can me-1"></i> 2. Xuất Hủy (Hàng Hết Hạn / Hư Hỏng)
+                                    </label>
+                                    <div class="small text-muted mt-1 ps-4">
+                                        Chỉ định chính xác lô hàng cần tiêu hủy. Bắt buộc Quản lý phê duyệt trước khi trừ tồn kho.
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Khu vực dành riêng cho Xuất Lên Quầy (FEFO) -->
+                    <div id="sectionLenQuay" class="p-3 bg-primary-subtle rounded border border-primary-subtle mb-4">
+                        <h6 class="fw-bold text-primary mb-3"><i class="fa-solid fa-cube me-1"></i> CHỌN SẢN PHẨM CẦN XUẤT LÊN QUẦY</h6>
+                        <div class="row g-3">
+                            <div class="col-md-8">
+                                <label class="form-label small fw-bold">Sản phẩm:</label>
+                                <select name="ChiTiet[0].MaHang" class="form-select" id="selectHangFEFO">
+                                    <option value="">-- Chọn sản phẩm --</option>
+                                    @foreach (var p in products)
+                                    {
+                                        <option value="@p.MaHang" data-stock="@p.TongTonKho">
+                                            @p.TenHang (Tồn kho: @p.TongTonKho, Tồn quầy: @p.TongTonQuay @p.DonViTinh)
+                                        </option>
+                                    }
+                                </select>
+                            </div>
+                            <div class="col-md-4">
+                                <label class="form-label small fw-bold">Số lượng xuất lên quầy:</label>
+                                <input type="number" name="ChiTiet[0].SoLuong" class="form-control text-end font-monospace" min="1" value="10" />
+                            </div>
+                        </div>
+                        <div class="small text-muted mt-2">
+                            <i class="fa-solid fa-shield-halved text-success me-1"></i>
+                            Thuật toán FEFO sẽ tự động tách số lượng trên các lô có hạn dùng gần nhất trong kho.
+                        </div>
+                    </div>
+
+                    <!-- Khu vực dành riêng cho Xuất Hủy -->
+                    <div id="sectionHuy" style="display: none;" class="p-3 bg-danger-subtle rounded border border-danger-subtle mb-4">
+                        <h6 class="fw-bold text-danger mb-3"><i class="fa-solid fa-triangle-exclamation me-1"></i> CHỌN LÔ HÀNG CẦN XUẤT HỦY (CẦN QUẢN LÝ DUYỆT)</h6>
+                        <div class="row g-3 mb-3">
+                            <div class="col-md-4">
+                                <label class="form-label small fw-bold">Khu vực tiêu hủy <span class="text-danger">*</span></label>
+                                <select asp-for="KhuVuc" class="form-select form-select-sm">
+                                    <option value="KHO">Tại Kho</option>
+                                    <option value="QUAY">Tại Quầy</option>
+                                </select>
+                            </div>
+                            <div class="col-md-8">
+                                <label class="form-label small fw-bold">Lý do tiêu hủy <span class="text-danger">*</span></label>
+                                <input asp-for="LyDo" class="form-control form-control-sm" placeholder="VD: Hàng hết hạn sử dụng, bể vỡ do vận chuyển..." />
+                            </div>
+                        </div>
+
+                        <div class="row g-3">
+                            <div class="col-md-8">
+                                <label class="form-label small fw-bold">Lô hàng tiêu hủy:</label>
+                                <select name="ChiTiet[1].MaLo" class="form-select form-select-sm" id="selectLoHuy">
+                                    <option value="">-- Chọn lô hàng cần hủy --</option>
+                                    @foreach (var l in lots)
+                                    {
+                                        <option value="@l.MaLo">
+                                            [@l.SoLo] @l.TenHang (HSD: @l.HanSuDung.ToString("dd/MM/yyyy") - Còn: @l.SoNgayConLai ngày, Kho: @l.SlTonKho, Quầy: @l.SlTonQuay)
+                                        </option>
+                                    }
+                                </select>
+                            </div>
+                            <div class="col-md-4">
+                                <label class="form-label small fw-bold">Số lượng hủy:</label>
+                                <input type="number" name="ChiTiet[1].SoLuong" class="form-control form-control-sm text-end" min="1" value="1" />
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="d-flex justify-content-end gap-2">
+                        <a asp-action="Index" class="btn btn-secondary px-4">Hủy</a>
+                        <button type="submit" class="btn btn-warning px-5 fw-bold text-dark shadow-sm">
+                            <i class="fa-solid fa-check me-2"></i> THỰC THI XUẤT HÀNG
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script>
+        const radioLenQuay = document.getElementById('radioLenQuay');
+        const radioHuy = document.getElementById('radioHuy');
+        const secLenQuay = document.getElementById('sectionLenQuay');
+        const secHuy = document.getElementById('sectionHuy');
+
+        function toggleSections() {
+            if (radioLenQuay.checked) {
+                secLenQuay.style.display = 'block';
+                secHuy.style.display = 'none';
+            } else {
+                secLenQuay.style.display = 'none';
+                secHuy.style.display = 'block';
+            }
+        }
+
+        radioLenQuay.addEventListener('change', toggleSections);
+        radioHuy.addEventListener('change', toggleSections);
+        toggleSections();
+    </script>
+}

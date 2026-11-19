@@ -1,0 +1,31 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 200" width="100%" height="100%">
+  <defs>
+    <linearGradient id="wipeBg" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#ccfbf1"/>
+      <stop offset="100%" stop-color="#99f6e4"/>
+    </linearGradient>
+    <linearGradient id="wipePack" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#0f766e"/>
+      <stop offset="50%" stop-color="#14b8a6"/>
+      <stop offset="100%" stop-color="#0d9488"/>
+    </linearGradient>
+    <filter id="shadow13" x="-10%" y="-10%" width="120%" height="120%">
+      <feDropShadow dx="0" dy="5" stdDeviation="5" flood-opacity="0.2"/>
+    </filter>
+  </defs>
+  <rect width="200" height="200" rx="20" fill="url(#wipeBg)"/>
+  <g filter="url(#shadow13)">
+    <!-- Wet Wipe Soft Pillow Pack -->
+    <rect x="48" y="55" width="104" height="90" rx="14" fill="url(#wipePack)"/>
+    <!-- Plastic Flip Top Cover -->
+    <rect x="76" y="75" width="48" height="32" rx="10" fill="#ffffff" stroke="#99f6e4" stroke-width="2"/>
+    <ellipse cx="100" cy="91" rx="12" ry="7" fill="#14b8a6"/>
+    <!-- Water Moisture Drop -->
+    <path d="M100,86 Q105,92 105,95 Q105,99 100,99 Q95,99 95,95 Q95,92 100,86 Z" fill="#ffffff"/>
+    
+    <!-- Branding -->
+    <text x="100" y="70" text-anchor="middle" font-family="'Arial Black', sans-serif" font-size="11" font-weight="900" fill="#ffffff" letter-spacing="1">PURI</text>
+    <text x="100" y="123" text-anchor="middle" font-family="sans-serif" font-size="8" font-weight="800" fill="#fef08a">KHĂN ƯỚT KHÁNG KHUẨN</text>
+    <text x="100" y="134" text-anchor="middle" font-family="sans-serif" font-size="6.5" font-weight="600" fill="#ffffff" opacity="0.9">80 TỜ • KHÔNG MÙI</text>
+  </g>
+</svg>

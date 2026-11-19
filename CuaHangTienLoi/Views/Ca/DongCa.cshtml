@@ -1,0 +1,179 @@
+@model CuaHangTienLoi.Models.DongCaViewModel
+@{
+    ViewData["Title"] = "Đóng Ca & Chốt Tiền Mặt";
+    ViewBag.ActiveMenu = "DongCa";
+}
+
+<div class="row justify-content-center">
+    <div class="col-md-9 col-lg-8">
+        <div class="card shadow-sm border-0">
+            <div class="card-header bg-white py-3 border-bottom d-flex align-items-center justify-content-between">
+                <div class="d-flex align-items-center">
+                    <div class="bg-warning text-dark rounded p-2 me-3">
+                        <i class="fa-solid fa-door-closed fa-lg"></i>
+                    </div>
+                    <div>
+                        <h5 class="fw-bold mb-0 text-dark">Chốt Ca & Bàn Giao Tiền Mặt (Ca #@Model.MaCa)</h5>
+                        <small class="text-muted">Đối chiếu tiền mặt hệ thống với số tiền đếm thực tế</small>
+                    </div>
+                </div>
+                @if (Model.LaChotThay)
+                {
+                    <span class="badge bg-danger px-3 py-2">Quản Lý Chốt Thay</span>
+                }
+            </div>
+
+            <div class="card-body p-4">
+                <form asp-action="DongCa" method="post" id="formDongCa">
+                    @Html.AntiForgeryToken()
+                    <input type="hidden" asp-for="MaCa" />
+
+                    @if (!ViewData.ModelState.IsValid)
+                    {
+                        <div class="alert alert-danger py-2 small mb-3">
+                            @Html.ValidationSummary(false, "", new { @class = "mb-0 list-unstyled" })
+                        </div>
+                    }
+
+                    <!-- 1. Thông tin chung ca -->
+                    <div class="row g-3 mb-4 p-3 bg-light rounded border">
+                        <div class="col-sm-4">
+                            <small class="text-muted d-block">Quầy làm việc:</small>
+                            <strong class="text-primary">@Model.TenQuay</strong>
+                        </div>
+                        <div class="col-sm-4">
+                            <small class="text-muted d-block">Thu ngân mở ca:</small>
+                            <strong>@Model.TenThuNgan</strong>
+                        </div>
+                        <div class="col-sm-4">
+                            <small class="text-muted d-block">Thời điểm mở ca:</small>
+                            <span class="small font-monospace">@Model.GioMo.ToString("dd/MM/yyyy HH:mm")</span>
+                        </div>
+                    </div>
+
+                    <!-- 2. Bảng đối chiếu doanh thu hệ thống -->
+                    <h6 class="fw-bold text-secondary mb-2">DOANH THU HỆ THỐNG GHI NHẬN:</h6>
+                    <div class="row g-3 mb-4">
+                        <div class="col-md-3 col-6">
+                            <div class="border rounded p-3 text-center bg-white shadow-sm">
+                                <small class="text-muted d-block">Tiền đầu ca</small>
+                                <strong class="fs-6 font-monospace text-dark">@Model.TienDauCa.ToString("N0")đ</strong>
+                            </div>
+                        </div>
+                        <div class="col-md-3 col-6">
+                            <div class="border rounded p-3 text-center bg-white shadow-sm">
+                                <small class="text-success d-block">DT Tiền mặt</small>
+                                <strong class="fs-6 font-monospace text-success">+@Model.DoanhThuTienMat.ToString("N0")đ</strong>
+                            </div>
+                        </div>
+                        <div class="col-md-3 col-6">
+                            <div class="border rounded p-3 text-center bg-white shadow-sm">
+                                <small class="text-primary d-block">DT Chuyển khoản QR</small>
+                                <strong class="fs-6 font-monospace text-primary">@Model.DoanhThuQR.ToString("N0")đ</strong>
+                            </div>
+                        </div>
+                        <div class="col-md-3 col-6">
+                            <div class="border rounded p-3 text-center bg-white shadow-sm">
+                                <small class="text-info d-block">DT Thẻ ngân hàng</small>
+                                <strong class="fs-6 font-monospace text-info">@Model.DoanhThuThe.ToString("N0")đ</strong>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- 3. Hộp đối chiếu tiền mặt -->
+                    <div class="p-3 bg-primary-subtle rounded border border-primary-subtle mb-4">
+                        <div class="d-flex justify-content-between align-items-center mb-3">
+                            <span class="fw-bold text-dark">TỔNG TIỀN MẶT DỰ KIẾN (HỆ THỐNG):</span>
+                            <span class="fs-4 fw-bold text-primary font-monospace" id="tienMatHeThongDisplay">
+                                @Model.TienMatHeThong.ToString("N0")đ
+                            </span>
+                        </div>
+                        <div class="small text-muted mb-0">
+                            (Công thức: Tiền đầu ca [@Model.TienDauCa.ToString("N0")đ] + Doanh thu tiền mặt [@Model.DoanhThuTienMat.ToString("N0")đ])
+                        </div>
+                    </div>
+
+                    <!-- 4. Nhập tiền mặt thực tế kiểm đếm -->
+                    <div class="mb-3">
+                        <label asp-for="TienMatThucTe" class="form-label fw-bold fs-6">
+                            Số Tiền Mặt Đếm Thực Tế Tại Quầy (VNĐ) <span class="text-danger">*</span>
+                        </label>
+                        <div class="input-group input-group-lg">
+                            <input asp-for="TienMatThucTe" type="number" class="form-control font-monospace fw-bold fs-3 text-end" id="inputTienThucTe" required />
+                            <span class="input-group-text">VNĐ</span>
+                        </div>
+                        <span asp-validation-for="TienMatThucTe" class="text-danger small"></span>
+                    </div>
+
+                    <!-- 5. Hiển thị chênh lệch thời gian thực -->
+                    <div class="p-3 rounded border mb-4 d-flex justify-content-between align-items-center" id="boxChenhLech" style="background-color: #f8fafc;">
+                        <div>
+                            <span class="fw-bold">CHÊNH LỆCH TIỀN MẶT:</span>
+                            <div class="small text-muted" id="lblStatusChenhLech">Chưa có chênh lệch</div>
+                        </div>
+                        <div class="fs-3 fw-bold font-monospace" id="valChenhLech">0đ</div>
+                    </div>
+
+                    <!-- 6. Giải trình chênh lệch -->
+                    <div class="mb-4" id="groupLyDoChenhLech">
+                        <label asp-for="LyDoChenhLech" class="form-label fw-bold">
+                            Lý Do Giải Trình Chênh Lệch <span class="text-danger" id="reqLyDoMark" style="display: none;">* (Bắt buộc khi có chênh lệch)</span>
+                        </label>
+                        <textarea asp-for="LyDoChenhLech" class="form-control" rows="3" id="txtLyDoChenhLech" 
+                                  placeholder="Nhập giải trình lý do nếu tiền mặt thực tế khác tiền hệ thống (Ví dụ: Thối nhầm tiền cho khách, tiền rách...)"></textarea>
+                    </div>
+
+                    <div class="d-flex gap-2">
+                        <a asp-action="Index" class="btn btn-outline-secondary px-4 py-2">Hủy bỏ</a>
+                        <button type="submit" class="btn btn-warning flex-grow-1 py-2 fw-bold text-dark shadow-sm">
+                            <i class="fa-solid fa-lock me-2"></i> XÁC NHẬN CHỐT TIỀN & ĐÓNG CA
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script>
+        const tienHeThong = @Model.TienMatHeThong;
+        const inputThucTe = document.getElementById('inputTienThucTe');
+        const boxChenhLech = document.getElementById('boxChenhLech');
+        const valChenhLech = document.getElementById('valChenhLech');
+        const lblStatus = document.getElementById('lblStatusChenhLech');
+        const txtLyDo = document.getElementById('txtLyDoChenhLech');
+        const reqMark = document.getElementById('reqLyDoMark');
+
+        function recalculate() {
+            const val = parseFloat(inputThucTe.value || '0');
+            const diff = val - tienHeThong;
+
+            if (diff === 0) {
+                boxChenhLech.className = 'p-3 rounded border mb-4 d-flex justify-content-between align-items-center bg-success-subtle border-success-subtle';
+                valChenhLech.className = 'fs-3 fw-bold font-monospace text-success';
+                valChenhLech.innerText = '0đ';
+                lblStatus.innerText = 'Số tiền hoàn toàn khớp với hệ thống!';
+                reqMark.style.display = 'none';
+                txtLyDo.required = false;
+            } else if (diff > 0) {
+                boxChenhLech.className = 'p-3 rounded border mb-4 d-flex justify-content-between align-items-center bg-info-subtle border-info-subtle';
+                valChenhLech.className = 'fs-3 fw-bold font-monospace text-primary';
+                valChenhLech.innerText = '+' + diff.toLocaleString('vi-VN') + 'đ';
+                lblStatus.innerText = 'Thừa tiền so với hệ thống!';
+                reqMark.style.display = 'inline';
+                txtLyDo.required = true;
+            } else {
+                boxChenhLech.className = 'p-3 rounded border mb-4 d-flex justify-content-between align-items-center bg-danger-subtle border-danger-subtle';
+                valChenhLech.className = 'fs-3 fw-bold font-monospace text-danger';
+                valChenhLech.innerText = diff.toLocaleString('vi-VN') + 'đ';
+                lblStatus.innerText = 'THIẾU TIỀN SO VỚI HỆ THỐNG!';
+                reqMark.style.display = 'inline';
+                txtLyDo.required = true;
+            }
+        }
+
+        inputThucTe.addEventListener('input', recalculate);
+        recalculate();
+    </script>
+}

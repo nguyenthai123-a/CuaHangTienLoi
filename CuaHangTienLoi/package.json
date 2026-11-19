@@ -1,0 +1,12 @@
+{
+  "name": "cuahangtienloi",
+  "version": "1.0.0",
+  "description": "He thong Quan ly Kho va Cua hang Tien loi",
+  "scripts": {
+    "dev": "dotnet watch",
+    "start": "dotnet run",
+    "build": "dotnet build"
+  },
+  "author": "Antigravity",
+  "license": "ISC"
+}

@@ -1,0 +1,21 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 200" width="100%" height="100%">
+  <defs>
+    <linearGradient id="defBg" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#f1f5f9"/>
+      <stop offset="100%" stop-color="#e2e8f0"/>
+    </linearGradient>
+    <filter id="shadowDef" x="-10%" y="-10%" width="120%" height="120%">
+      <feDropShadow dx="0" dy="5" stdDeviation="5" flood-opacity="0.15"/>
+    </filter>
+  </defs>
+  <rect width="200" height="200" rx="20" fill="url(#defBg)"/>
+  <g filter="url(#shadowDef)" transform="translate(40, 40)">
+    <!-- Shopping bag / box icon -->
+    <rect x="15" y="35" width="90" height="75" rx="10" fill="#3b82f6"/>
+    <!-- Bag handles -->
+    <path d="M40,35 Q40,10 60,10 Q80,10 80,35" stroke="#1d4ed8" stroke-width="8" fill="none" stroke-linecap="round"/>
+    <!-- Store logo spark -->
+    <circle cx="60" cy="72" r="16" fill="#ffffff" opacity="0.9"/>
+    <path d="M60,62 L63,69 L70,72 L63,75 L60,82 L57,75 L50,72 L57,69 Z" fill="#2563eb"/>
+  </g>
+</svg>

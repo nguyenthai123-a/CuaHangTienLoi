@@ -1,0 +1,373 @@
+@model List<CuaHangTienLoi.Models.PosCartItem>
+@{
+    Layout = "_LayoutPOS";
+}
+
+<div class="pos-main-container">
+    <!-- Left Section: Catalog, Search & Barcode -->
+    <div class="pos-catalog-section">
+        <!-- Search & Scanner Bar -->
+        <div class="pos-search-bar d-flex gap-2 align-items-center">
+            <div class="input-group" style="flex: 2;">
+                <span class="input-group-text bg-light text-primary border-end-0">
+                    <i class="fa-solid fa-barcode fa-lg"></i>
+                </span>
+                <input type="text" id="barcodeInput" class="form-control border-start-0 ps-0 font-monospace fw-bold" 
+                       placeholder="Quét mã vạch hoặc gõ mã + Enter (F2)..." autocomplete="off" />
+            </div>
+
+            <div class="input-group" style="flex: 3;">
+                <span class="input-group-text bg-light text-secondary border-end-0">
+                    <i class="fa-solid fa-magnifying-glass"></i>
+                </span>
+                <input type="text" id="searchInput" class="form-control border-start-0 ps-0" 
+                       placeholder="Tìm theo tên sản phẩm..." autocomplete="off" />
+            </div>
+        </div>
+
+        <!-- Category Scroll Filters -->
+        <div class="pos-category-scroll">
+            <button class="pos-category-btn active" data-category="0"><i class="fa-solid fa-border-all me-1"></i> Tất cả</button>
+            <button class="pos-category-btn" data-category="1"><i class="fa-solid fa-bottle-water me-1"></i> Đồ uống</button>
+            <button class="pos-category-btn" data-category="2"><i class="fa-solid fa-bowl-food me-1"></i> Thực phẩm</button>
+            <button class="pos-category-btn" data-category="3"><i class="fa-solid fa-cow me-1"></i> Sữa & Chế phẩm</button>
+            <button class="pos-category-btn" data-category="4"><i class="fa-solid fa-cookie-bite me-1"></i> Bánh kẹo</button>
+            <button class="pos-category-btn text-danger fw-bold" data-category="5"><i class="fa-solid fa-wine-bottle me-1"></i> Hàng 18+ (Bia/Thuốc)</button>
+            <button class="pos-category-btn" data-category="6"><i class="fa-solid fa-spray-can me-1"></i> Tiện ích</button>
+        </div>
+
+        <!-- Product Cards Grid -->
+        <div class="pos-product-grid" id="productGrid">
+            @if (Model != null && Model.Count > 0)
+            {
+                foreach (var p in Model)
+                {
+                    <div class="pos-product-card @(p.GioiHanDoTuoi >= 18 ? "restricted-item" : "")"
+                         data-id="@p.MaHang"
+                         data-barcode="@p.MaVach"
+                         data-name="@p.TenHang"
+                         data-price="@p.DonGia"
+                         data-unit="@p.DonViTinh"
+                         data-stock="@p.TonQuayHienTai"
+                         data-age="@p.GioiHanDoTuoi"
+                         data-discount="@p.GiamGiaDonVi"
+                         data-promoname="@p.TenKM"
+                         data-promoid="@p.MaKM"
+                         data-category="@p.MaNhom">
+                        <div>
+                            <div class="d-flex justify-content-between align-items-start mb-1">
+                                <small class="text-secondary font-monospace" style="font-size: 0.7rem;">@p.MaVach</small>
+                                @if (p.GioiHanDoTuoi >= 18)
+                                {
+                                    <span class="badge bg-danger" style="font-size: 0.65rem;">18+</span>
+                                }
+                            </div>
+                            <div class="pos-product-img-wrap">
+                                <img src="/images/products/@(p.MaHang).svg" class="pos-product-img" alt="@p.TenHang" onerror="this.onerror=null; this.src='/images/products/default.svg';" />
+                            </div>
+                            <div class="pos-product-title" title="@p.TenHang">@p.TenHang</div>
+                        </div>
+                        <div>
+                            @if (p.GiamGiaDonVi > 0)
+                            {
+                                <div class="text-danger small text-decoration-line-through">@p.DonGia.ToString("N0")đ</div>
+                            }
+                            <div class="d-flex justify-content-between align-items-baseline">
+                                <div class="pos-product-price">@((p.DonGia - p.GiamGiaDonVi).ToString("N0"))đ</div>
+                                <div class="pos-product-stock">Quầy: <strong>@p.TonQuayHienTai</strong> @p.DonViTinh</div>
+                            </div>
+                        </div>
+                    </div>
+                }
+            }
+            else
+            {
+                <div class="col-12 text-center text-muted py-5">
+                    <i class="fa-solid fa-box-open fa-3x mb-3 text-secondary"></i><br>
+                    Không tìm thấy sản phẩm nào trên quầy
+                </div>
+            }
+        </div>
+    </div>
+
+    <!-- Right Section: Live Cart & Multi-Payment -->
+    <div class="pos-cart-section">
+        <!-- Customer Box -->
+        <div class="pos-customer-box">
+            <div class="input-group input-group-sm mb-1">
+                <span class="input-group-text bg-white"><i class="fa-solid fa-phone text-muted"></i></span>
+                <input type="text" id="phoneInput" class="form-control" placeholder="SĐT Khách hàng thân thiết (F4)..." />
+                <button class="btn btn-outline-primary" type="button" id="btnSearchCustomer">
+                    <i class="fa-solid fa-magnifying-glass"></i>
+                </button>
+            </div>
+            <div id="customerInfoBox" style="display: none;" class="bg-primary-subtle p-2 rounded small mt-1 border border-primary-subtle">
+                <div class="d-flex justify-content-between align-items-center">
+                    <div>
+                        <strong id="customerNameEl" class="text-primary">--</strong>
+                        <div class="text-muted" style="font-size: 0.75rem;">Điểm tích lũy: <span id="customerPointsEl" class="fw-bold text-success">0</span> điểm</div>
+                    </div>
+                    <div class="d-flex align-items-center gap-1">
+                        <label for="redeemPointsInput" class="small text-muted" style="font-size: 0.72rem;">Đổi điểm:</label>
+                        <input type="number" id="redeemPointsInput" class="form-control form-control-sm text-end" style="width: 70px;" value="0" min="0" />
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Cart Header -->
+        <div class="px-3 py-2 bg-white border-bottom d-flex justify-content-between align-items-center">
+            <div class="fw-bold text-dark small">
+                <i class="fa-solid fa-cart-shopping me-1 text-primary"></i> GIỎ HÀNG
+                <span class="badge bg-primary rounded-pill ms-1" id="badgeItemCount">0</span>
+            </div>
+            <button class="btn btn-outline-danger btn-sm py-0 px-2" id="btnClearCart" title="Xóa toàn bộ giỏ (Esc)">
+                <i class="fa-solid fa-trash-can me-1"></i> Xóa giỏ
+            </button>
+        </div>
+
+        <!-- Age Restriction Banner -->
+        <div id="ageWarningBanner" style="display: none;"></div>
+
+        <!-- Cart Items List -->
+        <div class="pos-cart-list" id="cartItemsList">
+            <!-- Empty Cart Message -->
+            <div class="text-center text-muted py-5" id="emptyCartMsg">
+                <i class="fa-solid fa-cart-arrow-down fa-3x mb-3 text-secondary"></i>
+                <div class="fw-semibold">Giỏ hàng chưa có sản phẩm nào</div>
+                <small class="text-secondary">Quét mã vạch hoặc bấm chọn sản phẩm để thêm vào giỏ</small>
+            </div>
+        </div>
+
+        <!-- Cart Summary -->
+        <div class="pos-summary-box">
+            <div class="d-flex justify-content-between text-muted small mb-1">
+                <span>Tổng tiền hàng:</span>
+                <span id="subTotalEl" class="font-monospace">0đ</span>
+            </div>
+            <div class="d-flex justify-content-between text-success small mb-2">
+                <span>Giảm giá & Đổi điểm:</span>
+                <span id="discountEl" class="font-monospace">-0đ</span>
+            </div>
+            <div class="d-flex justify-content-between align-items-baseline pos-total-row">
+                <span>KHÁCH PHẢI TRẢ:</span>
+                <span id="finalTotalEl" class="text-primary font-monospace">0đ</span>
+            </div>
+        </div>
+
+        <!-- Payment Action Buttons -->
+        <div class="pos-pay-btn-group">
+            <button class="btn btn-success pos-pay-btn shadow-sm" id="btnPayCash">
+                <i class="fa-solid fa-money-bill-wave fa-lg"></i>
+                <span>TIỀN MẶT (F8)</span>
+            </button>
+            <button class="btn btn-primary pos-pay-btn shadow-sm" id="btnPayQR">
+                <i class="fa-solid fa-qrcode fa-lg"></i>
+                <span>QUÉT QR (F9)</span>
+            </button>
+            <button class="btn btn-info text-white pos-pay-btn shadow-sm" id="btnPayCard">
+                <i class="fa-solid fa-credit-card fa-lg"></i>
+                <span>THẺ / POS (F10)</span>
+            </button>
+        </div>
+    </div>
+</div>
+
+<!-- ================= MODALS ================= -->
+
+<!-- 1. Modal Xác Nhận Độ Tuổi (GioiHanDoTuoi >= 18) -->
+<div class="modal fade" id="ageModal" tabindex="-1" aria-hidden="true" data-bs-backdrop="static">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content shadow border-0">
+            <div class="modal-header bg-danger text-white">
+                <h5 class="modal-title"><i class="fa-solid fa-triangle-exclamation me-2"></i> CẢNH BÁO: HÀNG HÓA GIỚI HẠN ĐỘ TUỔI (18+)</h5>
+            </div>
+            <div class="modal-body p-4 text-center">
+                <div class="text-danger mb-3">
+                    <i class="fa-solid fa-ban fa-4x"></i>
+                </div>
+                <h5 class="fw-bold text-danger">ĐƠN HÀNG CÓ SẢN PHẨM RƯỢU, BIA HOẶC THUỐC LÁ!</h5>
+                <p class="text-muted mt-2">
+                    Theo quy định pháp luật và chính sách cửa hàng, thu ngân <strong>bắt buộc phải kiểm tra giấy tờ tùy thân (CCCD/Bằng lái)</strong> 
+                    của khách hàng để xác nhận người mua đã <strong>đủ 18 tuổi</strong> trước khi tiến hành thanh toán.
+                </p>
+                <div class="alert alert-warning text-start small mb-0">
+                    <i class="fa-solid fa-circle-info me-1"></i> Thao tác xác nhận này sẽ được ghi nhận vào <strong>Nhật ký kiểm toán</strong> của hệ thống.
+                </div>
+            </div>
+            <div class="modal-footer justify-content-between">
+                <button type="button" class="btn btn-secondary px-3" data-bs-dismiss="modal">Hủy bỏ</button>
+                <button type="button" class="btn btn-danger px-4 fw-bold" id="btnConfirmAgeModal">
+                    <i class="fa-solid fa-id-card me-1"></i> ĐÃ KIỂM TRA & XÁC NHẬN ĐỦ 18 TUỔI
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- 2. Modal Thanh Toán Tiền Mặt -->
+<div class="modal fade" id="cashModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content shadow border-0">
+            <div class="modal-header bg-success text-white">
+                <h5 class="modal-title"><i class="fa-solid fa-money-bill-wave me-2"></i> Thanh Toán Tiền Mặt</h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body p-4">
+                <div class="d-flex justify-content-between align-items-center mb-3 p-3 bg-light rounded border">
+                    <span class="fw-bold">Số tiền cần thanh toán:</span>
+                    <span id="modalCashNeedPay" class="fs-4 fw-bold text-primary font-monospace">0đ</span>
+                </div>
+
+                <div class="mb-3">
+                    <label class="form-label fw-bold">Tiền khách đưa (VNĐ):</label>
+                    <input type="number" id="cashReceivedInput" class="form-control form-control-lg text-end font-monospace fw-bold fs-3 text-dark" />
+                </div>
+
+                <!-- Quick cash buttons -->
+                <div class="mb-3">
+                    <small class="text-muted d-block mb-1">Gợi ý mệnh giá tiền:</small>
+                    <div class="d-flex flex-wrap gap-2">
+                        <button type="button" class="cash-chip" data-value="0">Đúng số tiền</button>
+                        <button type="button" class="cash-chip" data-value="50000">50.000đ</button>
+                        <button type="button" class="cash-chip" data-value="100000">100.000đ</button>
+                        <button type="button" class="cash-chip" data-value="200000">200.000đ</button>
+                        <button type="button" class="cash-chip" data-value="500000">500.000đ</button>
+                    </div>
+                </div>
+
+                <div class="d-flex justify-content-between align-items-center p-3 bg-success-subtle rounded border border-success-subtle">
+                    <span class="fw-bold text-success">TIỀN THỐI LẠI KHÁCH:</span>
+                    <span id="cashChangeAmount" class="text-success fw-bold fs-4 font-monospace">0đ</span>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Hủy</button>
+                <button type="button" class="btn btn-success px-4 fw-bold" id="btnSubmitCashPay">
+                    <i class="fa-solid fa-check me-1"></i> HOÀN TẤT & IN HÓA ĐƠN
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- 3. Modal Thanh Toán QR (VietQR) -->
+<div class="modal fade" id="qrModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content shadow border-0">
+            <div class="modal-header bg-primary text-white">
+                <h5 class="modal-title"><i class="fa-solid fa-qrcode me-2"></i> Chuyển Khoản VietQR / Ví Điện Tử</h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body p-4 text-center">
+                <div class="d-flex justify-content-between align-items-center mb-3 p-2 bg-light rounded border">
+                    <span class="fw-bold">Số tiền cần thanh toán:</span>
+                    <span id="modalQRNeedPay" class="fs-4 fw-bold text-primary font-monospace">0đ</span>
+                </div>
+
+                <!-- VietQR Real Code Rendering -->
+                <div class="p-2 bg-white border rounded shadow-sm d-inline-block mb-3">
+                    <img src="~/images/vietqr_payment.jpg" alt="Mã thanh toán VietQR" class="img-fluid rounded" style="max-width: 250px; width: 100%; height: auto; object-fit: contain; display: block; margin: 0 auto;" />
+                    <div class="mt-2 text-center">
+                        <span class="badge bg-primary px-3 py-1 font-monospace" id="qrCodeText">VietQR 24/7</span>
+                    </div>
+                </div>
+
+                <div class="mb-3 text-start">
+                    <label class="form-label small fw-semibold">Mã giao dịch xác nhận (Tùy chọn):</label>
+                    <input type="text" id="qrTxId" class="form-control form-control-sm font-monospace" placeholder="Mã tra cứu ngân hàng..." />
+                </div>
+
+                <div class="small text-muted">
+                    Khách hàng mở ứng dụng Ngân hàng (VCB, MB, Techcombank, Momo, VNPay...) để quét mã thanh toán.
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Hủy</button>
+                <button type="button" class="btn btn-primary px-4 fw-bold" id="btnSubmitQRPay">
+                    <i class="fa-solid fa-check me-1"></i> XÁC NHẬN TIỀN ĐÃ VÀO TÀI KHOẢN
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- 4. Modal Thanh Toán Thẻ Ngân Hàng -->
+<div class="modal fade" id="cardModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content shadow border-0">
+            <div class="modal-header bg-info text-white">
+                <h5 class="modal-title"><i class="fa-solid fa-credit-card me-2"></i> Thanh Toán Thẻ Ngân Hàng (POS)</h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body p-4">
+                <div class="d-flex justify-content-between align-items-center mb-3 p-3 bg-light rounded border">
+                    <span class="fw-bold">Số tiền cà thẻ:</span>
+                    <span id="modalCardNeedPay" class="fs-4 fw-bold text-primary font-monospace">0đ</span>
+                </div>
+
+                <div class="row g-2 mb-3">
+                    <div class="col-6">
+                        <label class="form-label small fw-semibold">4 số cuối của thẻ:</label>
+                        <input type="text" id="cardLast4Digits" class="form-control font-monospace" maxlength="4" placeholder="VD: 6789" />
+                    </div>
+                    <div class="col-6">
+                        <label class="form-label small fw-semibold">Mã chuẩn chi (Trace No):</label>
+                        <input type="text" id="cardTraceCode" class="form-control font-monospace" placeholder="VD: 123456" />
+                    </div>
+                </div>
+
+                <div class="alert alert-info py-2 small mb-0">
+                    <i class="fa-solid fa-circle-info me-1"></i> Quẹt thẻ trên máy POS ngân hàng tại quầy và ghi nhận thông tin biên nhận.
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Hủy</button>
+                <button type="button" class="btn btn-info text-white px-4 fw-bold" id="btnSubmitCardPay">
+                    <i class="fa-solid fa-check me-1"></i> XÁC NHẬN GIAO DỊCH THẺ
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- 5. Modal Thanh Toán Thành Công & In Hóa Đơn -->
+<div class="modal fade" id="successModal" tabindex="-1" aria-hidden="true" data-bs-backdrop="static">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content shadow border-0 text-center p-4">
+            <div class="text-success mb-3">
+                <i class="fa-solid fa-circle-check fa-4x"></i>
+            </div>
+            <h4 class="fw-bold text-dark mb-1">THANH TOÁN THÀNH CÔNG!</h4>
+            <div class="text-secondary small mb-3">Hóa đơn đã được lưu trữ an toàn trong CSDL và cập nhật Thẻ kho (FEFO).</div>
+
+            <div class="bg-light p-3 rounded border text-start mb-3">
+                <div class="d-flex justify-content-between mb-1">
+                    <span class="text-muted">Mã số hóa đơn:</span>
+                    <strong class="font-monospace text-primary fs-5" id="successInvoiceCode">HD-0000</strong>
+                </div>
+                <div class="d-flex justify-content-between mb-1">
+                    <span class="text-muted">Tổng thanh toán:</span>
+                    <strong class="font-monospace text-dark" id="successFinalAmount">0đ</strong>
+                </div>
+                <div class="d-flex justify-content-between">
+                    <span class="text-muted">Tiền thối lại:</span>
+                    <strong class="font-monospace text-success" id="successChangeAmount">0đ</strong>
+                </div>
+            </div>
+
+            <div class="d-flex gap-2">
+                <button type="button" class="btn btn-primary flex-grow-1 py-2 fw-bold" id="btnPrintInvoiceModal">
+                    <i class="fa-solid fa-print me-1"></i> IN HÓA ĐƠN (K80)
+                </button>
+                <button type="button" class="btn btn-outline-secondary px-4" data-bs-dismiss="modal">
+                    Đơn tiếp theo
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script src="~/js/pos.js" asp-append-version="true"></script>
+}

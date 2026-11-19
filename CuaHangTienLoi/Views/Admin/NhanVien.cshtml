@@ -1,0 +1,181 @@
+@model List<CuaHangTienLoi.Models.NhanVien>
+@{
+    ViewData["Title"] = "Nhân viên & Phân quyền";
+    ViewBag.ActiveMenu = "NhanVien";
+    var accounts = ViewBag.Accounts as List<CuaHangTienLoi.Models.TaiKhoan> ?? new();
+    var roles = ViewBag.Roles as List<CuaHangTienLoi.Models.VaiTro> ?? new();
+}
+
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <div>
+        <h4 class="fw-bold mb-1"><i class="fa-solid fa-users-gear text-primary me-2"></i> Quản Lý Nhân Viên & Phân Quyền (RBAC)</h4>
+        <p class="text-muted small mb-0">Quản lý danh sách nhân sự, tài khoản đăng nhập, trạng thái khóa tài khoản và phân quyền</p>
+    </div>
+    <button class="btn btn-primary fw-semibold shadow-sm" data-bs-toggle="modal" data-bs-target="#modalNewNV">
+        <i class="fa-solid fa-user-plus me-1"></i> Thêm Nhân Viên Mới
+    </button>
+</div>
+
+<!-- Bảng danh sách nhân viên & tài khoản -->
+<div class="card shadow-sm border-0">
+    <div class="card-body p-0">
+        <div class="table-responsive">
+            <table class="table table-hover align-middle mb-0">
+                <thead class="table-light">
+                    <tr>
+                        <th class="ps-3">Mã NV</th>
+                        <th>Họ Và Tên</th>
+                        <th>Số Điện Thoại</th>
+                        <th>Tên Đăng Nhập</th>
+                        <th>Vai Trò (RBAC)</th>
+                        <th>Lần Sai</th>
+                        <th class="text-center">Trạng Thái Tài Khoản</th>
+                        <th class="text-center pe-3">Hành Động</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach (var nv in Model)
+                    {
+                        var acc = accounts.FirstOrDefault(a => a.MaNV == nv.MaNV);
+                        <tr>
+                            <td class="ps-3 fw-bold text-secondary">#@nv.MaNV</td>
+                            <td class="fw-bold text-dark">@nv.HoTen</td>
+                            <td>@(string.IsNullOrEmpty(nv.SoDienThoai) ? "--" : nv.SoDienThoai)</td>
+                            <td>
+                                @if (acc != null)
+                                {
+                                    <span class="font-monospace fw-bold text-primary">@acc.TenDangNhap</span>
+                                }
+                                else
+                                {
+                                    <span class="text-muted small">Chưa có tài khoản</span>
+                                }
+                            </td>
+                            <td>
+                                @if (acc != null)
+                                {
+                                    <span class="badge @(acc.MaVaiTro == "QUAN_LY" ? "bg-primary" : (acc.MaVaiTro == "NHAN_VIEN_KHO" ? "bg-info text-dark" : "bg-warning text-dark"))">
+                                        @acc.VaiTro?.TenVaiTro
+                                    </span>
+                                }
+                                else
+                                {
+                                    <span>--</span>
+                                }
+                            </td>
+                            <td class="font-monospace">
+                                @if (acc != null)
+                                {
+                                    if (acc.SoLanNhapSai > 0)
+                                    {
+                                        <span class="badge bg-danger">@acc.SoLanNhapSai/5</span>
+                                    }
+                                    else
+                                    {
+                                        <span class="text-success">0</span>
+                                    }
+                                }
+                                else
+                                {
+                                    <span>--</span>
+                                }
+                            </td>
+                            <td class="text-center">
+                                @if (acc != null)
+                                {
+                                    if (acc.TrangThai)
+                                    {
+                                        <span class="badge bg-success-subtle text-success border border-success">Hoạt động</span>
+                                    }
+                                    else
+                                    {
+                                        <span class="badge bg-danger-subtle text-danger border border-danger">Bị khóa (Lock)</span>
+                                    }
+                                }
+                                else
+                                {
+                                    <span>--</span>
+                                }
+                            </td>
+                            <td class="text-center pe-3">
+                                @if (acc != null && acc.TenDangNhap != "admin")
+                                {
+                                    <form asp-action="KhoaMoTaiKhoan" method="post" class="d-inline">
+                                        @Html.AntiForgeryToken()
+                                        <input type="hidden" name="id" value="@acc.MaTK" />
+                                        <input type="hidden" name="moKhoa" value="@(acc.TrangThai ? "false" : "true")" />
+                                        <button type="submit" class="btn btn-sm @(acc.TrangThai ? "btn-outline-danger" : "btn-outline-success") py-1 px-2">
+                                            @if (acc.TrangThai)
+                                            {
+                                                <i class="fa-solid fa-lock me-1"></i> <span>Khóa</span>
+                                            }
+                                            else
+                                            {
+                                                <i class="fa-solid fa-lock-open me-1"></i> <span>Mở khóa</span>
+                                            }
+                                        </button>
+                                    </form>
+                                }
+                            </td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+<!-- Modal Thêm Nhân Viên & Tài Khoản -->
+<div class="modal fade" id="modalNewNV" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content shadow border-0">
+            <div class="modal-header bg-primary text-white">
+                <h5 class="modal-title"><i class="fa-solid fa-user-plus me-2"></i> Thêm Nhân Viên & Cấp Tài Khoản</h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <form asp-action="TaoNhanVien" method="post">
+                @Html.AntiForgeryToken()
+                <div class="modal-body p-4">
+                    <div class="mb-3">
+                        <label class="form-label fw-bold">Họ và tên nhân viên <span class="text-danger">*</span></label>
+                        <input type="text" name="HoTen" class="form-control" placeholder="VD: Nguyễn Văn B" required />
+                    </div>
+
+                    <div class="mb-3">
+                        <label class="form-label fw-bold">Số điện thoại</label>
+                        <input type="text" name="SoDienThoai" class="form-control" placeholder="VD: 0912345678" />
+                    </div>
+
+                    <hr class="my-3 text-muted">
+
+                    <div class="mb-3">
+                        <label class="form-label fw-bold">Tên đăng nhập <span class="text-danger">*</span></label>
+                        <input type="text" name="tenDangNhap" class="form-control font-monospace" placeholder="VD: thungan03" required />
+                    </div>
+
+                    <div class="mb-3">
+                        <label class="form-label fw-bold">Mật khẩu khởi tạo <span class="text-danger">*</span></label>
+                        <input type="password" name="matKhau" class="form-control" placeholder="Mật khẩu ban đầu" required />
+                        <small class="form-text text-muted">Mật khẩu sẽ được băm tự động bằng Bcrypt trước khi lưu CSDL.</small>
+                    </div>
+
+                    <div class="mb-3">
+                        <label class="form-label fw-bold">Vai trò phân quyền (Role) <span class="text-danger">*</span></label>
+                        <select name="maVaiTro" class="form-select" required>
+                            @foreach (var r in roles)
+                            {
+                                <option value="@r.MaVaiTro">@r.TenVaiTro (@r.MoTa)</option>
+                            }
+                        </select>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Hủy</button>
+                    <button type="submit" class="btn btn-primary px-4 fw-bold">
+                        <i class="fa-solid fa-check me-1"></i> Lưu Nhân Viên
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>

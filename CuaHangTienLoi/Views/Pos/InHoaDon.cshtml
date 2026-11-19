@@ -1,0 +1,267 @@
+@model CuaHangTienLoi.Models.HoaDon
+@{
+    Layout = null;
+}
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Hóa đơn @Model.SoHoaDon - Cửa Hàng Tiện Lợi 24/7</title>
+    <!-- Font Awesome -->
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Courier New', Courier, monospace;
+            background: #f1f5f9;
+            margin: 0;
+            padding: 20px;
+            display: flex;
+            justify-content: center;
+        }
+        .receipt-container {
+            width: 80mm;
+            background: #ffffff;
+            padding: 15px;
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+            color: #000000;
+            font-size: 12px;
+            line-height: 1.35;
+        }
+        .receipt-header {
+            text-align: center;
+            border-bottom: 1px dashed #000;
+            padding-bottom: 10px;
+            margin-bottom: 10px;
+        }
+        .receipt-title {
+            font-size: 16px;
+            font-weight: bold;
+            margin-bottom: 4px;
+        }
+        .receipt-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 10px 0;
+        }
+        .receipt-table th {
+            text-align: left;
+            border-bottom: 1px dashed #000;
+            padding: 4px 0;
+            font-size: 11px;
+        }
+        .receipt-table td {
+            padding: 4px 0;
+            vertical-align: top;
+        }
+        .receipt-summary {
+            border-top: 1px dashed #000;
+            padding-top: 8px;
+            margin-top: 8px;
+        }
+        .receipt-row {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 4px;
+        }
+        .receipt-footer {
+            text-align: center;
+            border-top: 1px dashed #000;
+            padding-top: 10px;
+            margin-top: 15px;
+            font-size: 11px;
+        }
+        .barcode-box {
+            text-align: center;
+            margin: 10px 0;
+            letter-spacing: 4px;
+            font-weight: bold;
+        }
+        .no-print {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            display: flex;
+            gap: 10px;
+        }
+        .btn-print {
+            background: #2563eb;
+            color: #fff;
+            border: none;
+            padding: 8px 16px;
+            border-radius: 4px;
+            cursor: pointer;
+            font-weight: bold;
+        }
+        @@media print {
+            body {
+                background: #fff;
+                padding: 0;
+            }
+            .receipt-container {
+                box-shadow: none;
+                width: 100%;
+                padding: 0;
+            }
+            .no-print {
+                display: none !important;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="no-print">
+        <button class="btn-print" onclick="window.print()"><i class="fa-solid fa-print"></i> In Hóa Đơn</button>
+        <button class="btn-print" style="background: #64748b;" onclick="window.close()">Đóng</button>
+    </div>
+
+    <div class="receipt-container">
+        <!-- Header -->
+        <div class="receipt-header">
+            <div class="receipt-title">CỬA HÀNG TIỆN LỢI 24/7</div>
+            <div>227 Nguyễn Văn Cừ, P.4, Q.5, TP.HCM</div>
+            <div>Hotline: 1900 6868 - CSKH 24/7</div>
+            <div style="margin-top: 6px; font-weight: bold; font-size: 13px;">HÓA ĐƠN BÁN HÀNG</div>
+            <div>Số HĐ: <strong>@Model.SoHoaDon</strong></div>
+            <div>Ngày: @Model.NgayGio.ToString("dd/MM/yyyy HH:mm:ss")</div>
+        </div>
+
+        <!-- Shift & Cashier -->
+        <div style="font-size: 11px; margin-bottom: 8px;">
+            <div class="receipt-row">
+                <span>Quầy: <strong>@Model.TenQuay</strong></span>
+                <span>Ca: <strong>#@Model.MaCa</strong></span>
+            </div>
+            <div class="receipt-row">
+                <span>Thu ngân: @Model.TenThuNgan</span>
+            </div>
+            @if (!string.IsNullOrEmpty(Model.TenKhachHang))
+            {
+                <div class="receipt-row">
+                    <span>Khách: @Model.TenKhachHang (@Model.SoDienThoaiKH)</span>
+                </div>
+            }
+            @if (Model.DaXacNhanDoTuoi)
+            {
+                <div style="color: #b91c1c; font-weight: bold;">[Đã kiểm tra xác nhận độ tuổi 18+]</div>
+            }
+        </div>
+
+        <!-- Items Table -->
+        <table class="receipt-table">
+            <thead>
+                <tr>
+                    <th style="width: 50%;">Tên món</th>
+                    <th style="width: 15%; text-align: center;">SL</th>
+                    <th style="width: 35%; text-align: right;">T.Tiền</th>
+                </tr>
+            </thead>
+            <tbody>
+                @foreach (var item in Model.ChiTiet)
+                {
+                    <tr>
+                        <td colspan="3" style="font-weight: bold; padding-top: 6px;">
+                            @item.TenHang
+                        </td>
+                    </tr>
+                    <tr>
+                        <td style="font-size: 10px; color: #555;">
+                            Lô: @item.SoLo (HSD: @item.HanSuDung.ToString("dd/MM/yy"))
+                        </td>
+                        <td style="text-align: center;">@item.SoLuong</td>
+                        <td style="text-align: right;">
+                            @item.ThanhTien.ToString("N0")đ
+                        </td>
+                    </tr>
+                    @if (item.SoTienGiam > 0)
+                    {
+                        <tr>
+                            <td colspan="3" style="font-size: 10px; text-align: right; color: #15803d;">
+                                (Đã giảm: -@item.SoTienGiam.ToString("N0")đ)
+                            </td>
+                        </tr>
+                    }
+                }
+            </tbody>
+        </table>
+
+        <!-- Summary -->
+        <div class="receipt-summary">
+            <div class="receipt-row">
+                <span>Tổng tiền hàng:</span>
+                <span>@Model.TongTien.ToString("N0")đ</span>
+            </div>
+            @if (Model.GiamGia > 0)
+            {
+                <div class="receipt-row" style="color: #15803d;">
+                    <span>Giảm giá / Điểm:</span>
+                    <span>-@Model.GiamGia.ToString("N0")đ</span>
+                </div>
+            }
+            <div class="receipt-row" style="font-weight: bold; font-size: 14px; margin-top: 4px;">
+                <span>KHÁCH PHẢI TRẢ:</span>
+                <span>@Model.ThanhTien.ToString("N0")đ</span>
+            </div>
+
+            <!-- Payment details -->
+            @foreach (var tt in Model.ThanhToanList)
+            {
+                <div style="border-top: 1px dotted #ccc; margin-top: 6px; padding-top: 4px;">
+                    <div class="receipt-row">
+                        <span>Hình thức:</span>
+                        <span><strong>@tt.LoaiThanhToan</strong></span>
+                    </div>
+                    @if (tt.LoaiThanhToan == "TIEN_MAT")
+                    {
+                        <div class="receipt-row">
+                            <span>Tiền khách đưa:</span>
+                            <span>@((tt.TienKhachDua ?? Model.ThanhTien).ToString("N0"))đ</span>
+                        </div>
+                        <div class="receipt-row">
+                            <span>Tiền thối lại:</span>
+                            <span>@((tt.TienThoi ?? 0).ToString("N0"))đ</span>
+                        </div>
+                    }
+                    else if (tt.LoaiThanhToan == "THE")
+                    {
+                        <div class="receipt-row">
+                            <span>Thẻ đuôi:</span>
+                            <span>**** @tt.SoTheCuoi</span>
+                        </div>
+                        <div class="receipt-row">
+                            <span>Mã chuẩn chi:</span>
+                            <span>@tt.MaChuanChi</span>
+                        </div>
+                    }
+                    else if (tt.LoaiThanhToan == "QR")
+                    {
+                        <div class="receipt-row">
+                            <span>Mã GD VietQR:</span>
+                            <span>@tt.MaGiaoDich</span>
+                        </div>
+                    }
+                </div>
+            }
+        </div>
+
+        <!-- Barcode simulation -->
+        <div class="barcode-box">
+            *@Model.SoHoaDon*
+        </div>
+
+        <!-- Footer -->
+        <div class="receipt-footer">
+            <div>CẢM ƠN QUÝ KHÁCH & HẸN GẶP LẠI!</div>
+            <div>Quý khách vui lòng kiểm tra hàng và tiền thối trước khi rời quầy.</div>
+            <div style="font-size: 10px; margin-top: 4px; color: #666;">Powered by CuaHangTienLoi System (ACID SQL)</div>
+        </div>
+    </div>
+
+    <script>
+        // Tự động bật hộp thoại in khi tải trang
+        window.onload = function() {
+            // setTimeout(() => window.print(), 500);
+        };
+    </script>
+</body>
+</html>
