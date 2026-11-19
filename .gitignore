@@ -41,3 +41,8 @@ yarn-error.log*
 scratch/
 .system_generated/
 .user_uploaded/
+
+## Binaries & Tools
+cloudflared.exe
+*.exe
+
