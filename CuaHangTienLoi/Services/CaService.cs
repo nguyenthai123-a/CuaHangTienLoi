@@ -10,11 +10,13 @@ namespace CuaHangTienLoi.Services
     {
         private readonly CaDao _caDao;
         private readonly NhatKyDao _nhatKyDao;
+        private readonly BanHangDao _banHangDao;
 
         public CaService(IConfiguration configuration)
         {
             _caDao = new CaDao(configuration);
             _nhatKyDao = new NhatKyDao(configuration);
+            _banHangDao = new BanHangDao(configuration);
         }
 
         public int MoCa(int maQuay, int maThuNgan, decimal tienDauCa, int maTK, string ip, string userAgent)
@@ -106,6 +108,16 @@ namespace CuaHangTienLoi.Services
         public List<Ca> GetAllShifts()
         {
             return _caDao.GetAllShifts(100);
+        }
+
+        public List<HoaDon> GetInvoicesByCa(int maCa)
+        {
+            return _banHangDao.GetInvoicesByCa(maCa);
+        }
+
+        public HoaDon? GetInvoice(int maHoaDon)
+        {
+            return _banHangDao.GetHoaDonById(maHoaDon);
         }
     }
 }

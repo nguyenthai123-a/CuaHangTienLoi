@@ -130,5 +130,30 @@ namespace CuaHangTienLoi.Controllers
             }
             return View(hd);
         }
+
+        [HttpGet]
+        public IActionResult GetInvoicesByCa(int? maCa)
+        {
+            var user = HttpContext.Session.GetObject<UserSessionModel>("CurrentUser");
+            int targetMaCa = maCa ?? user?.CurrentMaCa ?? 0;
+            if (targetMaCa <= 0)
+            {
+                return Json(new { success = false, message = "Không xác định được ca làm việc." });
+            }
+
+            var invoices = _posService.GetInvoicesByCa(targetMaCa);
+            return Json(new { success = true, data = invoices, maCa = targetMaCa });
+        }
+
+        [HttpGet]
+        public IActionResult GetInvoiceDetail(int id)
+        {
+            var hd = _posService.GetInvoice(id);
+            if (hd == null)
+            {
+                return Json(new { success = false, message = "Không tìm thấy hóa đơn." });
+            }
+            return Json(new { success = true, data = hd });
+        }
     }
 }

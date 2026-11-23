@@ -227,6 +227,34 @@ namespace CuaHangTienLoi.DataAccess
             return list;
         }
 
+        public List<HoaDon> GetInvoicesByCa(int maCa)
+        {
+            const string sql = @"
+                SELECT hd.MaHoaDon, hd.SoHD, hd.SoHoaDon, hd.NgayGio, hd.TongTien, hd.GiamGia, hd.TrangThai, 
+                       hd.DaXacNhanDoTuoi, hd.MaCa, hd.MaKH, hd.NguoiHuy, hd.LyDoHuy, hd.NgayHuy,
+                       kh.HoTen AS TenKhachHang, kh.SoDienThoai AS SoDienThoaiKH,
+                       nv.HoTen AS TenThuNgan, q.TenQuay
+                FROM dbo.HoaDon hd
+                INNER JOIN dbo.Ca c ON hd.MaCa = c.MaCa
+                INNER JOIN dbo.Quay q ON c.MaQuay = q.MaQuay
+                INNER JOIN dbo.NhanVien nv ON c.MaThuNgan = nv.MaNV
+                LEFT JOIN dbo.KhachHang kh ON hd.MaKH = kh.MaKH
+                WHERE hd.MaCa = @MaCa
+                ORDER BY hd.MaHoaDon DESC";
+
+            var list = new List<HoaDon>();
+            using var conn = OpenConnection();
+            using var cmd = new SqlCommand(sql, conn);
+            cmd.Parameters.AddWithValue("@MaCa", maCa);
+
+            using var reader = cmd.ExecuteReader();
+            while (reader.Read())
+            {
+                list.Add(MapHoaDon(reader));
+            }
+            return list;
+        }
+
         public void CancelHoaDon(int maHoaDon, int nguoiHuy, string lyDoHuy, SqlConnection conn, SqlTransaction trans)
         {
             const string sql = @"

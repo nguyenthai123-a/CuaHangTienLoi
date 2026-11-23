@@ -102,18 +102,23 @@
                                     }
                                 </td>
                                 <td class="text-center pe-3">
-                                    @if (ca.TrangThai == "MO")
-                                    {
-                                        <a asp-action="DongCa" asp-route-id="@ca.MaCa" class="btn btn-outline-warning btn-sm py-1 px-2" title="Chốt & Đóng ca">
-                                            <i class="fa-solid fa-door-closed me-1"></i> Chốt ca
-                                        </a>
-                                    }
-                                    else
-                                    {
-                                        <a asp-action="BaoCaoCa" asp-route-id="@ca.MaCa" class="btn btn-outline-primary btn-sm py-1 px-2" title="Xem báo cáo tổng kết">
-                                            <i class="fa-solid fa-file-lines me-1"></i> Báo cáo
-                                        </a>
-                                    }
+                                    <div class="btn-group btn-group-sm">
+                                        <button type="button" class="btn btn-outline-info py-1 px-2 btn-open-ca-invoices" data-maca="@ca.MaCa" data-quay="@ca.TenQuay" data-thungan="@ca.TenThuNgan" title="Xem lịch sử hóa đơn trong ca">
+                                            <i class="fa-solid fa-receipt me-1"></i> Hóa đơn
+                                        </button>
+                                        @if (ca.TrangThai == "MO")
+                                        {
+                                            <a asp-action="DongCa" asp-route-id="@ca.MaCa" class="btn btn-outline-warning py-1 px-2" title="Chốt & Đóng ca">
+                                                <i class="fa-solid fa-door-closed me-1"></i> Chốt ca
+                                            </a>
+                                        }
+                                        else
+                                        {
+                                            <a asp-action="BaoCaoCa" asp-route-id="@ca.MaCa" class="btn btn-outline-primary py-1 px-2" title="Xem báo cáo tổng kết">
+                                                <i class="fa-solid fa-file-lines me-1"></i> Báo cáo
+                                            </a>
+                                        }
+                                    </div>
                                 </td>
                             </tr>
                         }
@@ -123,3 +128,432 @@
         </div>
     </div>
 </div>
+
+<!-- Modal Lịch Sử Hóa Đơn Trong Ca -->
+<div class="modal fade" id="modalCaInvoices" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-xl modal-dialog-centered modal-dialog-scrollable">
+        <div class="modal-content shadow border-0">
+            <!-- HEADER -->
+            <div class="modal-header bg-dark text-white py-3">
+                <div class="d-flex align-items-center gap-2">
+                    <i class="fa-solid fa-clock-rotate-left text-warning fa-lg"></i>
+                    <h5 class="modal-title fw-bold mb-0" id="modalCaInvoicesTitle">Lịch Sử Hóa Đơn Trong Ca</h5>
+                </div>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+
+            <div class="modal-body p-3 p-md-4">
+                <!-- VIEW 1: DANH SÁCH HÓA ĐƠN -->
+                <div id="caInvoiceListView">
+                    <!-- Top stats & Search -->
+                    <div class="row g-2 align-items-center mb-3">
+                        <div class="col-md-7">
+                            <div class="d-flex flex-wrap gap-2 align-items-center">
+                                <span class="badge bg-primary fs-6 px-3 py-2">
+                                    <i class="fa-solid fa-receipt me-1"></i> Tổng: <span id="caHistTotalCount">0</span> HĐ
+                                </span>
+                                <span class="badge bg-success fs-6 px-3 py-2">
+                                    <i class="fa-solid fa-coins me-1"></i> Doanh thu ca: <span id="caHistTotalRevenue" class="font-monospace">0đ</span>
+                                </span>
+                                <button type="button" class="btn btn-outline-secondary btn-sm" id="btnRefreshCaHist" title="Tải lại danh sách">
+                                    <i class="fa-solid fa-arrows-rotate"></i>
+                                </button>
+                            </div>
+                        </div>
+                        <div class="col-md-5">
+                            <div class="input-group input-group-sm">
+                                <span class="input-group-text bg-light"><i class="fa-solid fa-magnifying-glass"></i></span>
+                                <input type="text" id="caHistSearchInput" class="form-control" placeholder="Tìm theo số HĐ, tên/SĐT khách..." />
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Table of Invoices -->
+                    <div class="table-responsive border rounded" style="max-height: 520px;">
+                        <table class="table table-hover align-middle mb-0">
+                            <thead class="table-light sticky-top">
+                                <tr>
+                                    <th class="ps-3">Số Hóa Đơn</th>
+                                    <th>Thời Gian</th>
+                                    <th>Khách Hàng</th>
+                                    <th class="text-end">Tiền Hàng</th>
+                                    <th class="text-end">Giảm Giá</th>
+                                    <th class="text-end">Thành Tiền</th>
+                                    <th class="text-center">Trạng Thái</th>
+                                    <th class="text-center pe-3">Thao Tác</th>
+                                </tr>
+                            </thead>
+                            <tbody id="caHistTableBody">
+                                <tr>
+                                    <td colspan="8" class="text-center py-4 text-muted">
+                                        <i class="fa-solid fa-spinner fa-spin me-1"></i> Đang tải dữ liệu hóa đơn...
+                                    </td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+
+                <!-- VIEW 2: CHI TIẾT HÓA ĐƠN & MẶT HÀNG ĐÃ MUA -->
+                <div id="caInvoiceDetailView" style="display: none;">
+                    <div class="d-flex justify-content-between align-items-center mb-3 pb-2 border-bottom">
+                        <button type="button" class="btn btn-outline-secondary btn-sm fw-semibold" id="btnBackToCaInvoiceList">
+                            <i class="fa-solid fa-arrow-left me-1"></i> Quay lại danh sách hóa đơn
+                        </button>
+                        <div class="d-flex gap-2">
+                            <button type="button" class="btn btn-primary btn-sm fw-semibold" id="btnPrintCaDetailInvoice">
+                                <i class="fa-solid fa-print me-1"></i> In lại hóa đơn
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- Thông tin tóm tắt hóa đơn -->
+                    <div class="row g-3 p-3 bg-light rounded border mb-3">
+                        <div class="col-sm-3 col-6">
+                            <small class="text-muted d-block">Mã hóa đơn:</small>
+                            <span class="fw-bold font-monospace text-primary fs-6" id="caDetailInvoiceCode">--</span>
+                        </div>
+                        <div class="col-sm-3 col-6">
+                            <small class="text-muted d-block">Thời gian tạo:</small>
+                            <span class="fw-semibold font-monospace small" id="caDetailInvoiceTime">--</span>
+                        </div>
+                        <div class="col-sm-3 col-6">
+                            <small class="text-muted d-block">Thu ngân:</small>
+                            <span class="fw-semibold" id="caDetailCashierName">--</span>
+                        </div>
+                        <div class="col-sm-3 col-6">
+                            <small class="text-muted d-block">Khách hàng:</small>
+                            <span class="fw-semibold text-dark" id="caDetailCustomerInfo">Khách vãng lai</span>
+                        </div>
+                    </div>
+
+                    <!-- Bảng các mặt hàng đã mua -->
+                    <h6 class="fw-bold text-secondary mb-2">DANH SÁCH MẶT HÀNG ĐÃ MUA:</h6>
+                    <div class="table-responsive border rounded mb-3">
+                        <table class="table table-sm table-striped align-middle mb-0">
+                            <thead class="table-light">
+                                <tr>
+                                    <th class="ps-3" style="width: 50px;">STT</th>
+                                    <th>Tên Sản Phẩm</th>
+                                    <th class="text-center">ĐVT</th>
+                                    <th class="text-center">Lô / HSD</th>
+                                    <th class="text-center">Số Lượng</th>
+                                    <th class="text-end">Đơn Giá</th>
+                                    <th class="text-end">Giảm Giá</th>
+                                    <th class="text-end pe-3">Thành Tiền</th>
+                                </tr>
+                            </thead>
+                            <tbody id="caDetailItemsTableBody">
+                                <!-- Rendered dynamically -->
+                            </tbody>
+                        </table>
+                    </div>
+
+                    <!-- Tổng kết hóa đơn và thanh toán -->
+                    <div class="row g-3">
+                        <div class="col-md-6">
+                            <div class="p-3 bg-white rounded border h-100">
+                                <h6 class="fw-bold text-secondary mb-2"><i class="fa-solid fa-credit-card me-1"></i> Phương Thức Thanh Toán</h6>
+                                <div id="caDetailPaymentMethodsList" class="small">
+                                    <!-- Rendered dynamically -->
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="p-3 bg-light rounded border">
+                                <div class="d-flex justify-content-between mb-1">
+                                    <span class="text-muted">Tổng tiền hàng:</span>
+                                    <span class="font-monospace fw-semibold" id="caDetailTotalGoods">0đ</span>
+                                </div>
+                                <div class="d-flex justify-content-between mb-1">
+                                    <span class="text-muted">Tổng giảm giá / Khuyến mãi:</span>
+                                    <span class="font-monospace text-danger" id="caDetailDiscount">0đ</span>
+                                </div>
+                                <hr class="my-2">
+                                <div class="d-flex justify-content-between align-items-baseline">
+                                    <span class="fw-bold text-dark fs-6">TỔNG CỘNG:</span>
+                                    <span class="font-monospace fw-bold text-success fs-5" id="caDetailFinalAmount">0đ</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="modal-footer py-2">
+                <button type="button" class="btn btn-secondary btn-sm" data-bs-dismiss="modal">Đóng</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script>
+        (function () {
+            let currentMaCa = 0;
+            let currentShiftInvoices = [];
+            let activeDetailInvoiceId = null;
+            const modalEl = document.getElementById('modalCaInvoices');
+            const bsModal = modalEl ? new bootstrap.Modal(modalEl) : null;
+
+            // Nút mở modal hóa đơn
+            document.querySelectorAll('.btn-open-ca-invoices').forEach(btn => {
+                btn.addEventListener('click', function () {
+                    currentMaCa = parseInt(this.dataset.maca);
+                    const quay = this.dataset.quay || '';
+                    const thungan = this.dataset.thungan || '';
+
+                    document.getElementById('modalCaInvoicesTitle').innerText = `Lịch Sử Hóa Đơn - Ca #${currentMaCa} (${quay} - Thu ngân: ${thungan})`;
+                    document.getElementById('caInvoiceDetailView').style.display = 'none';
+                    document.getElementById('caInvoiceListView').style.display = 'block';
+                    document.getElementById('caHistSearchInput').value = '';
+
+                    if (bsModal) bsModal.show();
+                    loadCaInvoices(currentMaCa);
+                });
+            });
+
+            // Tải danh sách hóa đơn theo mã ca
+            async function loadCaInvoices(maCa) {
+                const tbody = document.getElementById('caHistTableBody');
+                if (!tbody) return;
+                tbody.innerHTML = `
+                    <tr>
+                        <td colspan="8" class="text-center py-4 text-muted">
+                            <i class="fa-solid fa-spinner fa-spin me-1"></i> Đang tải dữ liệu hóa đơn...
+                        </td>
+                    </tr>`;
+
+                try {
+                    const res = await fetch(`/Ca/GetInvoicesByCa?id=${maCa}`);
+                    const data = await res.json();
+                    if (data.success && Array.isArray(data.data)) {
+                        currentShiftInvoices = data.data;
+                        const totalCount = currentShiftInvoices.length;
+                        const totalRevenue = currentShiftInvoices
+                            .filter(i => i.trangThai === 'HOAN_TAT')
+                            .reduce((sum, i) => sum + (i.thanhTien || (i.tongTien - i.giamGia)), 0);
+
+                        document.getElementById('caHistTotalCount').innerText = totalCount;
+                        document.getElementById('caHistTotalRevenue').innerText = totalRevenue.toLocaleString('vi-VN') + 'đ';
+
+                        renderCaTable(currentShiftInvoices);
+                    } else {
+                        tbody.innerHTML = `
+                            <tr>
+                                <td colspan="8" class="text-center py-4 text-danger">
+                                    ${data.message || 'Không thể tải lịch sử hóa đơn.'}
+                                </td>
+                            </tr>`;
+                    }
+                } catch (err) {
+                    console.error(err);
+                    tbody.innerHTML = `
+                        <tr>
+                            <td colspan="8" class="text-center py-4 text-danger">
+                                Lỗi kết nối khi tải danh sách hóa đơn.
+                            </td>
+                        </tr>`;
+                }
+            }
+
+            // Render bảng hóa đơn
+            function renderCaTable(invoices) {
+                const tbody = document.getElementById('caHistTableBody');
+                if (!tbody) return;
+
+                if (!invoices || invoices.length === 0) {
+                    tbody.innerHTML = `
+                        <tr>
+                            <td colspan="8" class="text-center py-4 text-muted">
+                                <i class="fa-solid fa-receipt fa-2x mb-2 text-secondary d-block"></i>
+                                Chưa có hóa đơn nào được lập trong ca làm việc này.
+                            </td>
+                        </tr>`;
+                    return;
+                }
+
+                tbody.innerHTML = invoices.map(hd => {
+                    const dateStr = hd.ngayGio ? new Date(hd.ngayGio).toLocaleString('vi-VN') : '--';
+                    const customerStr = hd.tenKhachHang ? `${hd.tenKhachHang} (${hd.soDienThoaiKH || ''})` : '<span class="text-muted">Khách vãng lai</span>';
+                    const statusBadge = hd.trangThai === 'HOAN_TAT'
+                        ? '<span class="badge bg-success-subtle text-success border border-success">Hoàn tất</span>'
+                        : '<span class="badge bg-danger-subtle text-danger border border-danger">Đã hủy</span>';
+                    const thanhTien = hd.thanhTien || (hd.tongTien - hd.giamGia);
+
+                    return `
+                        <tr>
+                            <td class="ps-3 font-monospace fw-bold text-primary">
+                                <a href="javascript:void(0)" class="text-decoration-none ca-view-detail-link" data-id="${hd.maHoaDon}">
+                                    ${hd.soHoaDon || 'HD-' + hd.maHoaDon}
+                                </a>
+                            </td>
+                            <td class="small text-secondary">${dateStr}</td>
+                            <td class="small">${customerStr}</td>
+                            <td class="text-end font-monospace">${(hd.tongTien || 0).toLocaleString('vi-VN')}đ</td>
+                            <td class="text-end font-monospace text-danger">-${(hd.giamGia || 0).toLocaleString('vi-VN')}đ</td>
+                            <td class="text-end font-monospace fw-bold text-success">${thanhTien.toLocaleString('vi-VN')}đ</td>
+                            <td class="text-center">${statusBadge}</td>
+                            <td class="text-center pe-3">
+                                <div class="btn-group btn-group-sm">
+                                    <button type="button" class="btn btn-outline-primary py-1 px-2 btn-ca-invoice-detail" data-id="${hd.maHoaDon}" title="Xem chi tiết các mặt hàng">
+                                        <i class="fa-solid fa-eye me-1"></i> Chi tiết
+                                    </button>
+                                    <button type="button" class="btn btn-outline-secondary py-1 px-2 btn-ca-reprint" data-id="${hd.maHoaDon}" title="In lại hóa đơn">
+                                        <i class="fa-solid fa-print"></i>
+                                    </button>
+                                </div>
+                            </td>
+                        </tr>`;
+                }).join('');
+
+                // Gán sự kiện xem chi tiết
+                tbody.querySelectorAll('.btn-ca-invoice-detail, .ca-view-detail-link').forEach(btn => {
+                    btn.addEventListener('click', function () {
+                        const id = parseInt(this.dataset.id);
+                        viewCaInvoiceDetail(id);
+                    });
+                });
+
+                // Gán sự kiện in lại
+                tbody.querySelectorAll('.btn-ca-reprint').forEach(btn => {
+                    btn.addEventListener('click', function () {
+                        const id = parseInt(this.dataset.id);
+                        window.open(`/Pos/InHoaDon/${id}`, '_blank', 'width=450,height=650');
+                    });
+                });
+            }
+
+            // Tìm kiếm hóa đơn
+            document.getElementById('caHistSearchInput')?.addEventListener('input', function () {
+                const q = this.value.trim().toLowerCase();
+                if (!q) {
+                    renderCaTable(currentShiftInvoices);
+                    return;
+                }
+                const filtered = currentShiftInvoices.filter(i => {
+                    const code = (i.soHoaDon || '').toLowerCase();
+                    const cusName = (i.tenKhachHang || '').toLowerCase();
+                    const cusPhone = (i.soDienThoaiKH || '').toLowerCase();
+                    return code.includes(q) || cusName.includes(q) || cusPhone.includes(q);
+                });
+                renderCaTable(filtered);
+            });
+
+            // Làm mới
+            document.getElementById('btnRefreshCaHist')?.addEventListener('click', function () {
+                if (currentMaCa > 0) loadCaInvoices(currentMaCa);
+            });
+
+            // Quay lại danh sách
+            document.getElementById('btnBackToCaInvoiceList')?.addEventListener('click', function () {
+                document.getElementById('caInvoiceDetailView').style.display = 'none';
+                document.getElementById('caInvoiceListView').style.display = 'block';
+            });
+
+            // In lại trong chi tiết
+            document.getElementById('btnPrintCaDetailInvoice')?.addEventListener('click', function () {
+                if (activeDetailInvoiceId) {
+                    window.open(`/Pos/InHoaDon/${activeDetailInvoiceId}`, '_blank', 'width=450,height=650');
+                }
+            });
+
+            // Xem chi tiết hóa đơn
+            async function viewCaInvoiceDetail(maHoaDon) {
+                try {
+                    const res = await fetch(`/Ca/GetInvoiceDetail?id=${maHoaDon}`);
+                    const data = await res.json();
+                    if (!data.success || !data.data) {
+                        alert(data.message || 'Không tìm thấy chi tiết hóa đơn.');
+                        return;
+                    }
+
+                    const hd = data.data;
+                    activeDetailInvoiceId = hd.maHoaDon;
+
+                    document.getElementById('caDetailInvoiceCode').innerText = hd.soHoaDon || 'HD-' + hd.maHoaDon;
+                    document.getElementById('caDetailInvoiceTime').innerText = hd.ngayGio ? new Date(hd.ngayGio).toLocaleString('vi-VN') : '--';
+                    document.getElementById('caDetailCashierName').innerText = hd.tenThuNgan || '--';
+                    document.getElementById('caDetailCustomerInfo').innerText = hd.tenKhachHang ? `${hd.tenKhachHang} - ${hd.soDienThoaiKH || ''}` : 'Khách vãng lai';
+
+                    // Render mặt hàng
+                    const itemsTbody = document.getElementById('caDetailItemsTableBody');
+                    if (hd.chiTiet && hd.chiTiet.length > 0) {
+                        itemsTbody.innerHTML = hd.chiTiet.map((ct, idx) => {
+                            const hsdStr = ct.hanSuDung ? new Date(ct.hanSuDung).toLocaleDateString('vi-VN') : '--';
+                            const loHsd = ct.soLo ? `${ct.soLo} (${hsdStr})` : '--';
+                            const thanhTien = ct.thanhTien || (ct.soLuong * ct.donGia - (ct.soTienGiam || 0));
+                            return `
+                                <tr>
+                                    <td class="ps-3 text-center text-muted">${idx + 1}</td>
+                                    <td class="fw-semibold text-dark">${ct.tenHang || 'Sản phẩm #' + ct.maHang}</td>
+                                    <td class="text-center small">${ct.donViTinh || ''}</td>
+                                    <td class="text-center font-monospace small text-muted">${loHsd}</td>
+                                    <td class="text-center fw-bold">${ct.soLuong}</td>
+                                    <td class="text-end font-monospace">${(ct.donGia || 0).toLocaleString('vi-VN')}đ</td>
+                                    <td class="text-end font-monospace text-danger">${(ct.soTienGiam || 0) > 0 ? '-' + ct.soTienGiam.toLocaleString('vi-VN') + 'đ' : '0đ'}</td>
+                                    <td class="text-end pe-3 font-monospace fw-bold">${thanhTien.toLocaleString('vi-VN')}đ</td>
+                                </tr>`;
+                        }).join('');
+                    } else {
+                        itemsTbody.innerHTML = `
+                            <tr>
+                                <td colspan="8" class="text-center py-3 text-muted">Không có dữ liệu mặt hàng</td>
+                            </tr>`;
+                    }
+
+                    // Render thanh toán
+                    const payBox = document.getElementById('caDetailPaymentMethodsList');
+                    if (hd.thanhToanList && hd.thanhToanList.length > 0) {
+                        payBox.innerHTML = hd.thanhToanList.map(tt => {
+                            let typeName = 'Tiền mặt';
+                            let typeIcon = 'fa-money-bill-wave text-success';
+                            if (tt.loaiThanhToan === 'QR') {
+                                typeName = 'Chuyển khoản QR';
+                                typeIcon = 'fa-qrcode text-primary';
+                            } else if (tt.loaiThanhToan === 'THE') {
+                                typeName = 'Thẻ ngân hàng (POS)';
+                                typeIcon = 'fa-credit-card text-info';
+                            }
+
+                            let extra = '';
+                            if (tt.tienKhachDua != null && tt.tienKhachDua > 0) {
+                                extra = `<div class="text-muted" style="font-size: 0.75rem;">Khách đưa: ${tt.tienKhachDua.toLocaleString('vi-VN')}đ - Thối lại: ${(tt.tienThoi || 0).toLocaleString('vi-VN')}đ</div>`;
+                            }
+                            if (tt.maGiaoDich) {
+                                extra += `<div class="text-muted font-monospace" style="font-size: 0.72rem;">Mã GD: ${tt.maGiaoDich}</div>`;
+                            }
+
+                            return `
+                                <div class="d-flex justify-content-between align-items-center py-1 border-bottom">
+                                    <div>
+                                        <i class="fa-solid ${typeIcon} me-1"></i> <strong>${typeName}</strong>
+                                        ${extra}
+                                    </div>
+                                    <span class="font-monospace fw-bold text-dark">${(tt.soTien || 0).toLocaleString('vi-VN')}đ</span>
+                                </div>`;
+                        }).join('');
+                    } else {
+                        payBox.innerHTML = '<span class="text-muted">Không có thông tin thanh toán</span>';
+                    }
+
+                    // Tổng tiền
+                    const tongTien = hd.tongTien || 0;
+                    const giamGia = hd.giamGia || 0;
+                    const finalThanhTien = hd.thanhTien || (tongTien - giamGia);
+                    document.getElementById('caDetailTotalGoods').innerText = tongTien.toLocaleString('vi-VN') + 'đ';
+                    document.getElementById('caDetailDiscount').innerText = (giamGia > 0 ? '-' : '') + giamGia.toLocaleString('vi-VN') + 'đ';
+                    document.getElementById('caDetailFinalAmount').innerText = finalThanhTien.toLocaleString('vi-VN') + 'đ';
+
+                    // Chuyển view
+                    document.getElementById('caInvoiceListView').style.display = 'none';
+                    document.getElementById('caInvoiceDetailView').style.display = 'block';
+
+                } catch (err) {
+                    console.error(err);
+                    alert('Lỗi tải chi tiết hóa đơn.');
+                }
+            }
+        })();
+    </script>
+}

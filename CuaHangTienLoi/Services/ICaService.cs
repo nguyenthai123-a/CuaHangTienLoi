@@ -10,5 +10,7 @@ namespace CuaHangTienLoi.Services
         void DongCa(DongCaViewModel model, int maNguoiChot, int maTK, string ip, string userAgent);
         BaoCaoCa? GetBaoCaoCa(int maCa);
         List<Ca> GetAllShifts();
+        List<HoaDon> GetInvoicesByCa(int maCa);
+        HoaDon? GetInvoice(int maHoaDon);
     }
 }

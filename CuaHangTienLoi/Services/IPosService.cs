@@ -11,5 +11,6 @@ namespace CuaHangTienLoi.Services
         KhachHang CreateCustomer(string name, string phone);
         PosCheckoutResult Checkout(PosCheckoutRequest request, int currentMaNV, int currentMaTK, string ip, string userAgent);
         HoaDon? GetInvoice(int maHoaDon);
+        List<HoaDon> GetInvoicesByCa(int maCa);
     }
 }

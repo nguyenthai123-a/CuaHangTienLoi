@@ -9,6 +9,8 @@ const PosApp = (function () {
     let redeemedPoints = 0;
     let ageConfirmed = false;
     let currentCategory = 0;
+    let shiftInvoices = [];
+    let activeDetailInvoiceId = null;
 
     // Elements
     const elements = {
@@ -32,7 +34,8 @@ const PosApp = (function () {
         cashModal: new bootstrap.Modal(document.getElementById('cashModal')),
         cardModal: new bootstrap.Modal(document.getElementById('cardModal')),
         qrModal: new bootstrap.Modal(document.getElementById('qrModal')),
-        successModal: new bootstrap.Modal(document.getElementById('successModal'))
+        successModal: new bootstrap.Modal(document.getElementById('successModal')),
+        invoiceHistoryModal: document.getElementById('invoiceHistoryModal') ? new bootstrap.Modal(document.getElementById('invoiceHistoryModal')) : null
     };
 
     function init() {
@@ -158,11 +161,42 @@ const PosApp = (function () {
             }
         });
 
+        // Nút mở lịch sử hóa đơn trong ca
+        document.getElementById('btnOpenHistoryModal')?.addEventListener('click', function () {
+            openInvoiceHistoryModal();
+        });
+
+        // Tìm kiếm trong danh sách hóa đơn
+        document.getElementById('historySearchInput')?.addEventListener('input', function () {
+            filterHistoryInvoices(this.value.trim());
+        });
+
+        // Nút làm mới lịch sử
+        document.getElementById('btnRefreshHistory')?.addEventListener('click', function () {
+            loadShiftInvoices();
+        });
+
+        // Nút quay lại danh sách từ chi tiết
+        document.getElementById('btnBackToInvoiceList')?.addEventListener('click', function () {
+            document.getElementById('invoiceDetailView').style.display = 'none';
+            document.getElementById('invoiceListView').style.display = 'block';
+        });
+
+        // Nút in lại hóa đơn trong chi tiết
+        document.getElementById('btnPrintDetailInvoice')?.addEventListener('click', function () {
+            if (activeDetailInvoiceId) {
+                window.open(`/Pos/InHoaDon/${activeDetailInvoiceId}`, '_blank', 'width=450,height=650');
+            }
+        });
+
         // Phím tắt bàn phím
         window.addEventListener('keydown', function (e) {
             if (e.key === 'F2') {
                 e.preventDefault();
                 elements.barcodeInput?.focus();
+            } else if (e.key === 'F3') {
+                e.preventDefault();
+                openInvoiceHistoryModal();
             } else if (e.key === 'F4') {
                 e.preventDefault();
                 elements.phoneInput?.focus();
@@ -576,12 +610,248 @@ const PosApp = (function () {
         }
     }
 
+    // ===== CHỨC NĂNG LỊCH SỬ HÓA ĐƠN TRONG CA =====
+    function openInvoiceHistoryModal() {
+        if (!elements.invoiceHistoryModal) return;
+        document.getElementById('invoiceDetailView').style.display = 'none';
+        document.getElementById('invoiceListView').style.display = 'block';
+        elements.invoiceHistoryModal.show();
+        loadShiftInvoices();
+    }
+
+    async function loadShiftInvoices() {
+        const tbody = document.getElementById('historyTableBody');
+        if (!tbody) return;
+        tbody.innerHTML = `
+            <tr>
+                <td colspan="8" class="text-center py-4 text-muted">
+                    <i class="fa-solid fa-spinner fa-spin me-1"></i> Đang tải dữ liệu hóa đơn...
+                </td>
+            </tr>`;
+
+        try {
+            const res = await fetch('/Pos/GetInvoicesByCa');
+            const data = await res.json();
+            if (data.success && Array.isArray(data.data)) {
+                shiftInvoices = data.data;
+                const totalCount = shiftInvoices.length;
+                const totalRevenue = shiftInvoices
+                    .filter(i => i.trangThai === 'HOAN_TAT')
+                    .reduce((sum, i) => sum + (i.thanhTien || (i.tongTien - i.giamGia)), 0);
+
+                const countEl = document.getElementById('historyTotalCount');
+                const revEl = document.getElementById('historyTotalRevenue');
+                const titleEl = document.getElementById('invoiceHistoryModalTitle');
+                if (countEl) countEl.innerText = totalCount;
+                if (revEl) revEl.innerText = totalRevenue.toLocaleString('vi-VN') + 'đ';
+                if (titleEl && data.maCa) {
+                    titleEl.innerText = `Lịch Sử Hóa Đơn Ca #${data.maCa}`;
+                }
+
+                renderHistoryTable(shiftInvoices);
+            } else {
+                tbody.innerHTML = `
+                    <tr>
+                        <td colspan="8" class="text-center py-4 text-danger">
+                            ${data.message || 'Không thể tải lịch sử hóa đơn.'}
+                        </td>
+                    </tr>`;
+            }
+        } catch (err) {
+            console.error(err);
+            tbody.innerHTML = `
+                <tr>
+                    <td colspan="8" class="text-center py-4 text-danger">
+                        Lỗi kết nối khi tải danh sách hóa đơn.
+                    </td>
+                </tr>`;
+        }
+    }
+
+    function renderHistoryTable(invoices) {
+        const tbody = document.getElementById('historyTableBody');
+        if (!tbody) return;
+
+        if (!invoices || invoices.length === 0) {
+            tbody.innerHTML = `
+                <tr>
+                    <td colspan="8" class="text-center py-4 text-muted">
+                        <i class="fa-solid fa-receipt fa-2x mb-2 text-secondary d-block"></i>
+                        Chưa có hóa đơn nào được lập trong ca làm việc này.
+                    </td>
+                </tr>`;
+            return;
+        }
+
+        tbody.innerHTML = invoices.map(hd => {
+            const dateStr = hd.ngayGio ? new Date(hd.ngayGio).toLocaleString('vi-VN') : '--';
+            const customerStr = hd.tenKhachHang ? `${hd.tenKhachHang} (${hd.soDienThoaiKH || ''})` : '<span class="text-muted">Khách vãng lai</span>';
+            const statusBadge = hd.trangThai === 'HOAN_TAT'
+                ? '<span class="badge bg-success-subtle text-success border border-success">Hoàn tất</span>'
+                : '<span class="badge bg-danger-subtle text-danger border border-danger">Đã hủy</span>';
+            const thanhTien = hd.thanhTien || (hd.tongTien - hd.giamGia);
+
+            return `
+                <tr>
+                    <td class="ps-3 font-monospace fw-bold text-primary">
+                        <a href="javascript:void(0)" class="text-decoration-none view-detail-link" data-id="${hd.maHoaDon}">
+                            ${hd.soHoaDon || 'HD-' + hd.maHoaDon}
+                        </a>
+                    </td>
+                    <td class="small text-secondary">${dateStr}</td>
+                    <td class="small">${customerStr}</td>
+                    <td class="text-end font-monospace">${(hd.tongTien || 0).toLocaleString('vi-VN')}đ</td>
+                    <td class="text-end font-monospace text-danger">-${(hd.giamGia || 0).toLocaleString('vi-VN')}đ</td>
+                    <td class="text-end font-monospace fw-bold text-success">${thanhTien.toLocaleString('vi-VN')}đ</td>
+                    <td class="text-center">${statusBadge}</td>
+                    <td class="text-center pe-3">
+                        <div class="btn-group btn-group-sm">
+                            <button type="button" class="btn btn-outline-primary py-1 px-2 btn-view-invoice-detail" data-id="${hd.maHoaDon}" title="Xem chi tiết các mặt hàng">
+                                <i class="fa-solid fa-eye me-1"></i> Chi tiết
+                            </button>
+                            <button type="button" class="btn btn-outline-secondary py-1 px-2 btn-reprint-invoice" data-id="${hd.maHoaDon}" title="In lại hóa đơn">
+                                <i class="fa-solid fa-print"></i>
+                            </button>
+                        </div>
+                    </td>
+                </tr>`;
+        }).join('');
+
+        // Gán sự kiện click xem chi tiết
+        tbody.querySelectorAll('.btn-view-invoice-detail, .view-detail-link').forEach(btn => {
+            btn.addEventListener('click', function () {
+                const id = parseInt(this.dataset.id);
+                viewInvoiceDetail(id);
+            });
+        });
+
+        // Gán sự kiện click in lại
+        tbody.querySelectorAll('.btn-reprint-invoice').forEach(btn => {
+            btn.addEventListener('click', function () {
+                const id = parseInt(this.dataset.id);
+                window.open(`/Pos/InHoaDon/${id}`, '_blank', 'width=450,height=650');
+            });
+        });
+    }
+
+    function filterHistoryInvoices(query) {
+        if (!query) {
+            renderHistoryTable(shiftInvoices);
+            return;
+        }
+        const q = query.toLowerCase();
+        const filtered = shiftInvoices.filter(i => {
+            const code = (i.soHoaDon || '').toLowerCase();
+            const cusName = (i.tenKhachHang || '').toLowerCase();
+            const cusPhone = (i.soDienThoaiKH || '').toLowerCase();
+            return code.includes(q) || cusName.includes(q) || cusPhone.includes(q);
+        });
+        renderHistoryTable(filtered);
+    }
+
+    async function viewInvoiceDetail(maHoaDon) {
+        try {
+            const res = await fetch(`/Pos/GetInvoiceDetail?id=${maHoaDon}`);
+            const data = await res.json();
+            if (!data.success || !data.data) {
+                alert(data.message || 'Không tìm thấy chi tiết hóa đơn.');
+                return;
+            }
+
+            const hd = data.data;
+            activeDetailInvoiceId = hd.maHoaDon;
+
+            document.getElementById('detailInvoiceCode').innerText = hd.soHoaDon || 'HD-' + hd.maHoaDon;
+            document.getElementById('detailInvoiceTime').innerText = hd.ngayGio ? new Date(hd.ngayGio).toLocaleString('vi-VN') : '--';
+            document.getElementById('detailCashierName').innerText = hd.tenThuNgan || '--';
+            document.getElementById('detailCustomerInfo').innerText = hd.tenKhachHang ? `${hd.tenKhachHang} - ${hd.soDienThoaiKH || ''}` : 'Khách vãng lai';
+
+            // Render danh sách mặt hàng
+            const itemsTbody = document.getElementById('detailItemsTableBody');
+            if (hd.chiTiet && hd.chiTiet.length > 0) {
+                itemsTbody.innerHTML = hd.chiTiet.map((ct, idx) => {
+                    const hsdStr = ct.hanSuDung ? new Date(ct.hanSuDung).toLocaleDateString('vi-VN') : '--';
+                    const loHsd = ct.soLo ? `${ct.soLo} (${hsdStr})` : '--';
+                    const thanhTien = ct.thanhTien || (ct.soLuong * ct.donGia - (ct.soTienGiam || 0));
+                    return `
+                        <tr>
+                            <td class="ps-3 text-center text-muted">${idx + 1}</td>
+                            <td class="fw-semibold text-dark">${ct.tenHang || 'Sản phẩm #' + ct.maHang}</td>
+                            <td class="text-center small">${ct.donViTinh || ''}</td>
+                            <td class="text-center font-monospace small text-muted">${loHsd}</td>
+                            <td class="text-center fw-bold">${ct.soLuong}</td>
+                            <td class="text-end font-monospace">${(ct.donGia || 0).toLocaleString('vi-VN')}đ</td>
+                            <td class="text-end font-monospace text-danger">${(ct.soTienGiam || 0) > 0 ? '-' + ct.soTienGiam.toLocaleString('vi-VN') + 'đ' : '0đ'}</td>
+                            <td class="text-end pe-3 font-monospace fw-bold">${thanhTien.toLocaleString('vi-VN')}đ</td>
+                        </tr>`;
+                }).join('');
+            } else {
+                itemsTbody.innerHTML = `
+                    <tr>
+                        <td colspan="8" class="text-center py-3 text-muted">Không có dữ liệu mặt hàng</td>
+                    </tr>`;
+            }
+
+            // Render phương thức thanh toán
+            const payBox = document.getElementById('detailPaymentMethodsList');
+            if (hd.thanhToanList && hd.thanhToanList.length > 0) {
+                payBox.innerHTML = hd.thanhToanList.map(tt => {
+                    let typeName = 'Tiền mặt';
+                    let typeIcon = 'fa-money-bill-wave text-success';
+                    if (tt.loaiThanhToan === 'QR') {
+                        typeName = 'Chuyển khoản QR';
+                        typeIcon = 'fa-qrcode text-primary';
+                    } else if (tt.loaiThanhToan === 'THE') {
+                        typeName = 'Thẻ ngân hàng (POS)';
+                        typeIcon = 'fa-credit-card text-info';
+                    }
+
+                    let extra = '';
+                    if (tt.tienKhachDua != null && tt.tienKhachDua > 0) {
+                        extra = `<div class="text-muted" style="font-size: 0.75rem;">Khách đưa: ${tt.tienKhachDua.toLocaleString('vi-VN')}đ - Thối lại: ${(tt.tienThoi || 0).toLocaleString('vi-VN')}đ</div>`;
+                    }
+                    if (tt.maGiaoDich) {
+                        extra += `<div class="text-muted font-monospace" style="font-size: 0.72rem;">Mã GD: ${tt.maGiaoDich}</div>`;
+                    }
+
+                    return `
+                        <div class="d-flex justify-content-between align-items-center py-1 border-bottom">
+                            <div>
+                                <i class="fa-solid ${typeIcon} me-1"></i> <strong>${typeName}</strong>
+                                ${extra}
+                            </div>
+                            <span class="font-monospace fw-bold text-dark">${(tt.soTien || 0).toLocaleString('vi-VN')}đ</span>
+                        </div>`;
+                }).join('');
+            } else {
+                payBox.innerHTML = '<span class="text-muted">Không có thông tin thanh toán</span>';
+            }
+
+            // Tổng kết tiền
+            const tongTien = hd.tongTien || 0;
+            const giamGia = hd.giamGia || 0;
+            const finalThanhTien = hd.thanhTien || (tongTien - giamGia);
+            document.getElementById('detailTotalGoods').innerText = tongTien.toLocaleString('vi-VN') + 'đ';
+            document.getElementById('detailDiscount').innerText = (giamGia > 0 ? '-' : '') + giamGia.toLocaleString('vi-VN') + 'đ';
+            document.getElementById('detailFinalAmount').innerText = finalThanhTien.toLocaleString('vi-VN') + 'đ';
+
+            // Hiển thị view chi tiết
+            document.getElementById('invoiceListView').style.display = 'none';
+            document.getElementById('invoiceDetailView').style.display = 'block';
+
+        } catch (err) {
+            console.error(err);
+            alert('Lỗi tải chi tiết hóa đơn.');
+        }
+    }
+
     window.PosApp = {
         init,
         addToCart,
         updateQuantity,
         removeItem,
         clearCart,
+        openInvoiceHistoryModal,
         showAgeModal: () => elements.ageModal.show()
     };
     return window.PosApp;

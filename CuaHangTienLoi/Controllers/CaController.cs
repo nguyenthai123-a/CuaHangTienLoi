@@ -167,5 +167,23 @@ namespace CuaHangTienLoi.Controllers
             }
             return View(bc);
         }
+
+        [HttpGet]
+        public IActionResult GetInvoicesByCa(int id)
+        {
+            var invoices = _caService.GetInvoicesByCa(id);
+            return Json(new { success = true, data = invoices, maCa = id });
+        }
+
+        [HttpGet]
+        public IActionResult GetInvoiceDetail(int id)
+        {
+            var hd = _caService.GetInvoice(id);
+            if (hd == null)
+            {
+                return Json(new { success = false, message = "Không tìm thấy hóa đơn." });
+            }
+            return Json(new { success = true, data = hd });
+        }
     }
 }

@@ -1,10 +1,23 @@
+@using Microsoft.AspNetCore.Diagnostics
 @{
     ViewData["Title"] = "Lỗi hệ thống";
+    var errorFeature = Context.Features.Get<IExceptionHandlerPathFeature>();
 }
 <div class="container text-center py-5">
     <div class="display-3 text-danger"><i class="fa-solid fa-triangle-exclamation"></i></div>
     <h3 class="fw-bold mt-3">Đã xảy ra lỗi trong quá trình xử lý yêu cầu!</h3>
     <p class="text-muted">Vui lòng thử lại hoặc liên hệ quản trị viên hệ thống để kiểm tra nhật ký lỗi.</p>
+
+    @if (errorFeature?.Error != null)
+    {
+        <div class="alert alert-danger text-start mt-4 p-3 shadow-sm mx-auto" style="max-width: 800px;">
+            <h6 class="fw-bold text-danger"><i class="fa-solid fa-bug me-1"></i> Thông tin lỗi chi tiết:</h6>
+            <div class="fw-semibold text-dark">@errorFeature.Error.Message</div>
+            <hr />
+            <pre class="small text-muted" style="white-space: pre-wrap; font-size: 0.75rem;">@errorFeature.Error.ToString()</pre>
+        </div>
+    }
+
     <a asp-controller="Home" asp-action="Index" class="btn btn-primary mt-3">
         <i class="fa-solid fa-house me-1"></i> Quay về Trang chủ
     </a>

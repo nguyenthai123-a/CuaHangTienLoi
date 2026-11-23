@@ -346,5 +346,10 @@ namespace CuaHangTienLoi.Services
         {
             return _banHangDao.GetHoaDonById(maHoaDon);
         }
+
+        public List<HoaDon> GetInvoicesByCa(int maCa)
+        {
+            return _banHangDao.GetInvoicesByCa(maCa);
+        }
     }
 }
